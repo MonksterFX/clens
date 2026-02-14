@@ -2,26 +2,16 @@
  * GET /api/events — SSE endpoint for real-time dashboard updates.
  */
 
-import http from "node:http";
+import type { Request, Response } from "express";
 
-import { isAuthorized } from "../../middleware/auth.js";
 import * as taskQueue from "../../state/task-queue.js";
-import { setActiveSseSessions } from "./status.js";
-
-/** Active SSE connections. */
-const connections = new Set<http.ServerResponse>();
+import * as sseConnections from "../../state/sse-connections.js";
 
 /** Handles GET /api/events — establishes an SSE connection for dashboard updates. */
 export async function handleEvents(
-  req: http.IncomingMessage,
-  res: http.ServerResponse
+  req: Request,
+  res: Response
 ): Promise<void> {
-  if (!isAuthorized(req.headers.authorization)) {
-    res.writeHead(401, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Unauthorized" }));
-    return;
-  }
-
   // Set up SSE headers
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
@@ -32,21 +22,19 @@ export async function handleEvents(
   // Send initial connection message
   res.write('data: {"type":"connected"}\n\n');
 
-  // Add to active connections
-  connections.add(res);
-  setActiveSseSessions(connections.size);
+  // Register with centralized SSE connection tracker
+  sseConnections.addConnection(res);
 
-  // Subscribe to task queue events
+  // Subscribe to task queue events and broadcast to this connection
   const unsubscribe = taskQueue.subscribe((event) => {
-    if (connections.has(res)) {
+    if (!res.destroyed) {
       res.write(`data: ${JSON.stringify(event)}\n\n`);
     }
   });
 
-  // Clean up on close
+  // Clean up on client disconnect
   req.on("close", () => {
-    connections.delete(res);
-    setActiveSseSessions(connections.size);
+    sseConnections.removeConnection(res);
     unsubscribe();
   });
 }

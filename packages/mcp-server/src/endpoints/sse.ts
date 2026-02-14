@@ -3,9 +3,14 @@
  *
  * GET  /sse                — establishes an SSE connection
  * POST /messages?sessionId — relays MCP messages for a session
+ *
+ * NOTE: Each SSE connection gets its own McpServer instance because the
+ * MCP SDK's Server class only supports a single transport at a time.
+ * Shared state (e.g. the task queue) lives in module-level singletons
+ * so all instances see the same data.
  */
 
-import http from "node:http";
+import type { Request, Response } from "express";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 
 import { createMcpServer } from "../mcp/server.js";
@@ -15,8 +20,8 @@ const sseTransports = new Map<string, SSEServerTransport>();
 
 /** Handles GET /sse — opens a new SSE session. */
 export async function handleSseConnect(
-  _req: http.IncomingMessage,
-  res: http.ServerResponse
+  _req: Request,
+  res: Response
 ): Promise<void> {
   const transport = new SSEServerTransport("/messages", res);
   sseTransports.set(transport.sessionId, transport);
@@ -33,16 +38,14 @@ export async function handleSseConnect(
 
 /** Handles POST /messages?sessionId=xxx — relays MCP messages for an active session. */
 export async function handleSseMessage(
-  req: http.IncomingMessage,
-  res: http.ServerResponse
+  req: Request,
+  res: Response
 ): Promise<void> {
-  const url = new URL(req.url!, `http://${req.headers.host || "localhost"}`);
-  const sessionId = url.searchParams.get("sessionId") ?? "";
+  const sessionId = (req.query.sessionId as string) ?? "";
   const transport = sseTransports.get(sessionId);
 
   if (!transport) {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Unknown or expired session" }));
+    res.status(400).json({ error: "Unknown or expired session" });
     return;
   }
 

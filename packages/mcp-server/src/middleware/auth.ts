@@ -2,6 +2,8 @@
  * Bearer-token authorization middleware.
  */
 
+import type { Request, Response, NextFunction } from "express";
+
 import { AUTH_TOKEN } from "../lib/config.js";
 
 /**
@@ -16,4 +18,20 @@ export function isAuthorized(authHeader: string | undefined): boolean {
   if (!match) return false;
 
   return match[1] === AUTH_TOKEN;
+}
+
+/**
+ * Express middleware that rejects requests without a valid bearer token.
+ * Skipped automatically when no AUTH_TOKEN is configured.
+ */
+export function requireAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!isAuthorized(req.headers.authorization)) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  next();
 }

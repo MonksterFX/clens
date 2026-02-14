@@ -11,12 +11,17 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 
 import { TRANSPORT, PORT } from "./lib/config.js";
 import { listenWithRetry } from "./lib/listen.js";
-import { createHttpServer } from "./server/http-server.js";
+import {
+  createHttpServer,
+  registerShutdownHandlers,
+} from "./server/http-server.js";
 import { createMcpServer } from "./mcp/server.js";
 
 /** Boots the HTTP receiver and the chosen MCP transport. */
 async function main() {
   const httpServer = createHttpServer();
+  registerShutdownHandlers(httpServer);
+
   const actualPort = await listenWithRetry(httpServer, PORT);
   console.error(
     `[clens-mcp] HTTP server listening on http://localhost:${actualPort}`

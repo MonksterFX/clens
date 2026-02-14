@@ -1,12 +1,16 @@
 /**
- * HTTP server creation and request routing.
+ * HTTP server creation with Express routing and middleware.
  *
- * Composes CORS middleware and delegates to endpoint handlers.
+ * All routes are defined in a single location for easy discoverability.
+ * Auth is handled by middleware so individual handlers stay focused.
  */
 
 import http from "node:http";
+import express from "express";
 
-import { applyCorsHeaders } from "../middleware/cors.js";
+import { corsMiddleware } from "../middleware/cors.js";
+import { requireAuth } from "../middleware/auth.js";
+import { requestLogger } from "../middleware/logger.js";
 import { handleTask } from "../endpoints/task.js";
 import { handleHealth } from "../endpoints/health.js";
 import { handleSseConnect, handleSseMessage } from "../endpoints/sse.js";
@@ -18,92 +22,86 @@ import {
   handleDeleteTask,
 } from "../endpoints/api/tasks.js";
 import { handleEvents } from "../endpoints/api/events.js";
-import { handleDashboard } from "../endpoints/dashboard/serve.js";
+import { createDashboardRouter } from "../endpoints/dashboard/serve.js";
 
-/** Creates the HTTP server with all routes wired up. */
+/** Creates the HTTP server with all routes wired up via Express. */
 export function createHttpServer(): http.Server {
-  return http.createServer(async (req, res) => {
-    // Apply CORS headers to every response
-    applyCorsHeaders(req, res);
+  const app = express();
 
-    // Preflight
-    if (req.method === "OPTIONS") {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
+  // ── Global middleware ──────────────────────────────────────────────
+  app.use(requestLogger);
+  app.use(corsMiddleware);
 
-    // POST /task — browser task submission
-    if (req.method === "POST" && req.url === "/task") {
-      await handleTask(req, res);
-      return;
-    }
+  // ── JSON body parser (1 MB limit, only for routes that need it) ──
+  const jsonParser = express.json({ limit: "1mb" });
 
-    // GET /sse — establish SSE connection for MCP transport
-    if (req.method === "GET" && req.url === "/sse") {
-      await handleSseConnect(req, res);
-      return;
-    }
+  // ── Task submission (browser overlay → server) ─────────────────────
+  app.post("/task", jsonParser, requireAuth, handleTask);
 
-    // POST /messages?sessionId=xxx — relay MCP messages
-    if (req.method === "POST" && req.url?.startsWith("/messages")) {
-      await handleSseMessage(req, res);
-      return;
-    }
+  // ── MCP SSE transport (no auth, no body parsing — SDK handles it) ──
+  app.get("/sse", handleSseConnect);
+  app.post("/messages", handleSseMessage);
 
-    // GET /health — health check
-    if (req.method === "GET" && req.url === "/health") {
-      await handleHealth(req, res);
-      return;
-    }
+  // ── Health check ───────────────────────────────────────────────────
+  app.get("/health", requireAuth, handleHealth);
 
-    // GET /api/status — server status
-    if (req.method === "GET" && req.url === "/api/status") {
-      await handleStatus(req, res);
-      return;
-    }
+  // ── API routes (all require auth) ──────────────────────────────────
+  const api = express.Router();
+  api.use(requireAuth);
+  api.get("/status", handleStatus);
+  api.get("/tasks/history", handleGetHistory);
+  api.get("/tasks", handleGetTasks);
+  api.delete("/tasks/:id", handleDeleteTask);
+  api.delete("/tasks", handleClearTasks);
+  api.get("/events", handleEvents);
+  app.use("/api", api);
 
-    // GET /api/tasks — list all pending tasks
-    if (req.method === "GET" && req.url === "/api/tasks") {
-      await handleGetTasks(req, res);
-      return;
-    }
+  // ── Dashboard static files ─────────────────────────────────────────
+  app.use("/dashboard", createDashboardRouter());
 
-    // GET /api/tasks/history — list completed tasks
-    if (req.method === "GET" && req.url === "/api/tasks/history") {
-      await handleGetHistory(req, res);
-      return;
-    }
-
-    // DELETE /api/tasks — clear all pending tasks
-    if (req.method === "DELETE" && req.url === "/api/tasks") {
-      await handleClearTasks(req, res);
-      return;
-    }
-
-    // DELETE /api/tasks/:id — delete specific task
-    if (req.method === "DELETE" && req.url?.startsWith("/api/tasks/")) {
-      const id = req.url.slice("/api/tasks/".length);
-      if (id) {
-        await handleDeleteTask(req, res, id);
-        return;
-      }
-    }
-
-    // GET /api/events — SSE stream for dashboard updates
-    if (req.method === "GET" && req.url === "/api/events") {
-      await handleEvents(req, res);
-      return;
-    }
-
-    // GET /dashboard* — serve dashboard static files
-    if (req.method === "GET" && req.url?.startsWith("/dashboard")) {
-      await handleDashboard(req, res);
-      return;
-    }
-
-    // Fallback — 404
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Not found" }));
+  // ── 404 fallback ───────────────────────────────────────────────────
+  app.use((req, res, next) => {
+    res.status(404).json({ error: "Not found" });
   });
+
+  // ── Global error handler ───────────────────────────────────────────
+  app.use((err: any, req: any, res: any, next: any) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal server error";
+    res.status(status).json({ error: message });
+  });
+
+  return http.createServer(app);
+}
+
+/**
+ * Registers graceful shutdown handlers for SIGTERM and SIGINT.
+ * Gives in-flight requests 10 seconds to complete before forcing exit.
+ */
+export function registerShutdownHandlers(server: http.Server): void {
+  let isShuttingDown = false;
+
+  const shutdown = (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    console.error(
+      `\n[clens-mcp] Received ${signal}, shutting down gracefully...`
+    );
+
+    // Stop accepting new connections
+    server.close(() => {
+      console.error("[clens-mcp] HTTP server closed");
+      process.exit(0);
+    });
+
+    // Force exit after 10 seconds if in-flight requests don't finish
+    setTimeout(() => {
+      console.error("[clens-mcp] Forcing shutdown after timeout");
+      process.exit(0);
+    }, 10_000);
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }

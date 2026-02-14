@@ -2,44 +2,23 @@
  * POST /task — accepts a new task submission from the browser overlay.
  */
 
-import http from "node:http";
+import type { Request, Response } from "express";
 
-import { readBody } from "../lib/http.js";
-import { isAuthorized } from "../middleware/auth.js";
 import * as taskQueue from "../state/task-queue.js";
 
-/** Handles POST /task requests. */
-export async function handleTask(
-  req: http.IncomingMessage,
-  res: http.ServerResponse
-): Promise<void> {
-  if (!isAuthorized(req.headers.authorization)) {
-    res.writeHead(401, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Unauthorized" }));
+/** Handles POST /task requests. Body is pre-parsed by express.json(). */
+export async function handleTask(req: Request, res: Response): Promise<void> {
+  const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+
+  if (!text) {
+    res.status(400).json({ error: "Missing 'text' field" });
     return;
   }
 
-  try {
-    const body = JSON.parse(await readBody(req));
-    const text = typeof body.text === "string" ? body.text.trim() : "";
+  const task = taskQueue.enqueue({
+    text,
+    timestamp: new Date().toISOString(),
+  });
 
-    if (!text) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Missing 'text' field" }));
-      return;
-    }
-
-    const task = taskQueue.enqueue({
-      text,
-      timestamp: new Date().toISOString(),
-    });
-
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(
-      JSON.stringify({ ok: true, queued: taskQueue.size(), id: task.id })
-    );
-  } catch {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Invalid JSON body" }));
-  }
+  res.json({ ok: true, queued: taskQueue.size(), id: task.id });
 }
