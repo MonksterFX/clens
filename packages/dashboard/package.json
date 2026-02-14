@@ -1,0 +1,13 @@
+{
+  "name": "@react-visual-debugger/dashboard",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "echo 'Dashboard dev server not yet implemented'"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
