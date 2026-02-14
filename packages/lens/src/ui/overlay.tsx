@@ -1,10 +1,9 @@
-// src/overlay.tsx
-
 import React, { useEffect, useRef, useState } from "react"
-import { resolveComponentInfo } from "./fiber"
+import type { ComponentInfo } from "../types"
+import { resolveComponentInfo } from "../utils/fiber"
 import { Tooltip } from "./tooltip"
 import { Toolbar } from "./toolbar"
-import { SettingsPanel } from "./settings"
+import { SettingsPanel } from "./settingsPanel"
 
 const OUTLINE_STYLE = "2px solid #3b82f6"
 const ANCHOR_NAME = "--inspector-target"
@@ -16,7 +15,7 @@ const ANCHOR_NAME = "--inspector-target"
  */
 export function InspectorOverlay() {
   const [enabled, setEnabled] = useState(false)
-  const [info, setInfo] = useState<any>(null)
+  const [info, setInfo] = useState<ComponentInfo | null>(null)
   const [anchored, setAnchored] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const hoveredRef = useRef<HTMLElement | null>(null)

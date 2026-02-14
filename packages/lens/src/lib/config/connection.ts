@@ -1,5 +1,3 @@
-// src/connection.ts
-
 /**
  * Connection configuration for the inspector overlay.
  * Stores server URL and optional authentication token.
@@ -94,30 +92,6 @@ export function getTaskEndpoint(): string {
  */
 export function getHealthEndpoint(): string {
   return `${currentConfig.serverUrl}/health`
-}
-
-/**
- * Checks the connection health by calling GET /health.
- * Returns true if the server responds with status 200, false otherwise.
- */
-export async function checkHealth(): Promise<boolean> {
-  try {
-    const headers: HeadersInit = {}
-    if (currentConfig.token) {
-      headers["Authorization"] = `Bearer ${currentConfig.token}`
-    }
-
-    const res = await fetch(getHealthEndpoint(), {
-      method: "GET",
-      headers,
-      signal: AbortSignal.timeout(5000), // 5 second timeout
-    })
-
-    return res.ok
-  } catch (err) {
-    console.warn("[inspector] Health check failed:", err)
-    return false
-  }
 }
 
 /**

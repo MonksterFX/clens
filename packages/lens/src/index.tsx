@@ -1,9 +1,8 @@
 // src/index.ts
 
-import React from "react"
 import { createRoot } from "react-dom/client"
-import { InspectorOverlay } from "./overlay"
-import { initConfig, type ConnectionConfig } from "./connection"
+import { InspectorOverlay } from "./ui/overlay"
+import { initConfig, type ConnectionConfig } from "./lib/config/connection"
 
 /**
  * Enables the React inspector overlay in development mode.

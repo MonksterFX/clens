@@ -1,7 +1,8 @@
-// src/toolbar.tsx
-
 import React, { useState, useRef, useEffect, useCallback } from "react"
-import { checkHealth, subscribe } from "./connection"
+import { checkHealth } from "../../lib/services/health"
+import { subscribe } from "../../lib/config/connection"
+import { ToolbarButton, Divider } from "./toolbarButton"
+import { InspectIcon, SettingsIcon } from "./icons"
 
 type HealthStatus = "checking" | "connected" | "disconnected"
 
@@ -194,114 +195,5 @@ export function Toolbar({
         <SettingsIcon />
       </ToolbarButton>
     </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                     */
-/* ------------------------------------------------------------------ */
-
-/** Reusable toolbar button with hover/active states. */
-function ToolbarButton({
-  children,
-  onClick,
-  title,
-  active = false,
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  title?: string
-  active?: boolean
-}) {
-  const [hovered, setHovered] = useState(false)
-
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-        padding: "5px 10px",
-        border: "none",
-        borderRadius: 7,
-        background: active
-          ? "rgba(59, 130, 246, 0.35)"
-          : hovered
-            ? "rgba(255,255,255,0.1)"
-            : "transparent",
-        color: active ? "#93bbfc" : "rgba(255,255,255,0.85)",
-        fontSize: 12,
-        fontFamily: "inherit",
-        cursor: "pointer",
-        transition: "background 0.15s, color 0.15s",
-        whiteSpace: "nowrap",
-        lineHeight: 1,
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-/** Vertical divider between toolbar sections. */
-function Divider() {
-  return (
-    <div
-      style={{
-        width: 1,
-        height: 18,
-        background: "rgba(255,255,255,0.12)",
-        flexShrink: 0,
-      }}
-    />
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/*  Icons (inline SVG)                                                 */
-/* ------------------------------------------------------------------ */
-
-/** Crosshair / inspect icon. */
-function InspectIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="2" x2="12" y2="6" />
-      <line x1="12" y1="18" x2="12" y2="22" />
-      <line x1="2" y1="12" x2="6" y2="12" />
-      <line x1="18" y1="12" x2="22" y2="12" />
-    </svg>
-  )
-}
-
-/** Gear / settings icon. */
-function SettingsIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
   )
 }

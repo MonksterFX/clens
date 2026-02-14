@@ -1,7 +1,6 @@
-// src/settings.tsx
-
 import React, { useState, useEffect } from "react"
-import { getConfig, setConfig, checkHealth } from "./connection"
+import { getConfig, setConfig } from "../lib/config/connection"
+import { checkHealth } from "../lib/services/health"
 
 /**
  * Settings panel for configuring the connection to the MCP server.

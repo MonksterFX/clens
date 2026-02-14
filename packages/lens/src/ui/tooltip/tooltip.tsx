@@ -1,76 +1,7 @@
-// src/tooltip.tsx
-
 import React, { useRef, useState } from "react"
-import { getConfig, getTaskEndpoint } from "./connection"
-
-/** Formats component info into an AI-friendly string for clipboard. */
-function formatInfoForAI(info: any): string {
-  return `Component: ${info.name}\nFile: ${info.file}\nLine: ${info.line}`
-}
-
-/** Sends a task (with component context) to the MCP HTTP server. */
-async function sendTask(text: string, info: any): Promise<void> {
-  const contextLine = `[${info.name} – ${info.file}:${info.line}]`
-  const body = JSON.stringify({ text: `${text}\n${contextLine}` })
-
-  const config = getConfig()
-  const headers: HeadersInit = { "Content-Type": "application/json" }
-  if (config.token) {
-    headers["Authorization"] = `Bearer ${config.token}`
-  }
-
-  const res = await fetch(getTaskEndpoint(), {
-    method: "POST",
-    headers,
-    body,
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as any).error ?? `HTTP ${res.status}`)
-  }
-}
-
-/**
- * CSS for the tooltip anchor positioning and @position-try fallbacks.
- * Default: tooltip top-left at anchor bottom-left.
- * Fallbacks: top-right at anchor bottom-right, bottom-left at anchor top-left,
- *            bottom-right at anchor top-right.
- */
-const TOOLTIP_STYLES = `
-  @position-try --inspector-br {
-    top: anchor(bottom);
-    bottom: auto;
-    left: auto;
-    right: anchor(right);
-    margin: 6px 0 0 0;
-  }
-
-  @position-try --inspector-tl {
-    top: auto;
-    bottom: anchor(top);
-    left: anchor(left);
-    right: auto;
-    margin: 0 0 6px 0;
-  }
-
-  @position-try --inspector-tr {
-    top: auto;
-    bottom: anchor(top);
-    left: auto;
-    right: anchor(right);
-    margin: 0 0 6px 0;
-  }
-
-  [data-inspector-tooltip] {
-    position: fixed;
-    position-anchor: --inspector-target;
-    top: anchor(bottom);
-    left: anchor(left);
-    margin: 6px 0 0 0;
-    position-try-fallbacks: --inspector-br, --inspector-tl, --inspector-tr;
-  }
-`
+import type { ComponentInfo } from "../../types"
+import { formatInfoForAI, sendTask } from "../../lib/services/task"
+import { TOOLTIP_STYLES } from "./tooltipStyles"
 
 /**
  * Displays component name and source location in a tooltip anchored to the
@@ -78,7 +9,7 @@ const TOOLTIP_STYLES = `
  * Falls back to bottom-left, top-right, or top-left when overflowing the viewport.
  * Includes a copy button for pasting info into AI tools.
  */
-export function Tooltip({ info }: { info: any }) {
+export function Tooltip({ info }: { info: ComponentInfo | null }) {
   const [copied, setCopied] = useState(false)
   const [taskText, setTaskText] = useState("")
   const [taskStatus, setTaskStatus] = useState<

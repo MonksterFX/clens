@@ -1,4 +1,4 @@
-// src/fiber.ts
+import type { ComponentInfo } from "../types"
 
 /**
  * Retrieves the React fiber node attached to a DOM element.
@@ -64,7 +64,7 @@ function parseDebugStack(
  * owner component fiber for the component name.
  * Supports both React <19 (_debugSource) and React 19+ (_debugStack).
  */
-export function resolveComponentInfo(dom: HTMLElement) {
+export function resolveComponentInfo(dom: HTMLElement): ComponentInfo | null {
   const fiber = getReactFiber(dom)
   if (!fiber) return null
 
@@ -94,4 +94,3 @@ export function resolveComponentInfo(dom: HTMLElement) {
     line: parsed?.lineNumber,
   }
 }
-  
