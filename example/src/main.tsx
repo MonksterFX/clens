@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./components/app";
 
-import { enableInspectorOverlay } from "@react-visual-debugger/lens"
+import { enableInspectorOverlay } from "../../packages/lens/src/index"
 
 enableInspectorOverlay()
 

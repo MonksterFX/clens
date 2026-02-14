@@ -1,15 +1,15 @@
-# react-visual-debugger-mcp
+# clens-mcp
 
-MCP server for the React Visual Debugger. Exposes a single tool, **TaskFromBrowser**, that lets an AI agent receive tasks submitted from the browser.
+MCP server for clens. Exposes a single tool, **TaskFromBrowser**, that lets an AI agent receive tasks submitted from the browser.
 
 ## How it works
 
 The server runs two things simultaneously:
 
-1. **stdio MCP transport** — communicates with Cursor (or any MCP client) over stdin/stdout.
+1. **MCP transport** — communicates with Cursor (or any MCP client) over stdio or SSE.
 2. **HTTP receiver** (default port `3100`) — accepts task submissions from the browser overlay via `POST /task`.
 
-When the React visual debugger overlay submits a task, it is queued in memory. An AI agent can then call `TaskFromBrowser` to dequeue and act on it.
+When the clens overlay submits a task, it is queued in memory. An AI agent can then call `TaskFromBrowser` to dequeue and act on it.
 
 ```
 Browser overlay ──POST /task──▶ HTTP server ──queue──▶ TaskFromBrowser tool ──▶ AI agent
@@ -66,12 +66,14 @@ Health check.
 
 ## Cursor configuration
 
-Add to `.cursor/mcp.json`:
+### stdio mode (default)
+
+Cursor spawns the server process and communicates over stdin/stdout:
 
 ```json
 {
   "mcpServers": {
-    "react-visual-debugger": {
+    "clens": {
       "command": "node",
       "args": ["./mcp/dist/index.js"]
     }
@@ -79,8 +81,28 @@ Add to `.cursor/mcp.json`:
 }
 ```
 
+### SSE mode
+
+Start the server independently with `MCP_TRANSPORT=sse`, then point Cursor at the SSE endpoint:
+
+```bash
+MCP_TRANSPORT=sse npm run dev
+```
+
+```json
+{
+  "mcpServers": {
+    "clens": {
+      "url": "http://localhost:3100/sse"
+    }
+  }
+}
+```
+
 ## Environment variables
 
-| Variable        | Default | Description                        |
-| --------------- | ------- | ---------------------------------- |
-| `MCP_HTTP_PORT` | `3100`  | Port for the HTTP task receiver.   |
+| Variable        | Default | Description                                      |
+| --------------- | ------- | ------------------------------------------------ |
+| `MCP_HTTP_PORT` | `3100`  | Port for the HTTP server (tasks + SSE).          |
+| `MCP_TRANSPORT` | `stdio` | MCP transport mode: `stdio` or `sse`.            |
+| `MCP_AUTH_TOKEN` | —      | Optional Bearer token for HTTP endpoint auth.    |

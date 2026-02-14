@@ -1,10 +1,10 @@
 {
-  "name": "@react-visual-debugger/mcp-server",
+  "name": "@clens/mcp-server",
   "version": "0.1.0",
   "type": "module",
   "private": true,
   "bin": {
-    "react-visual-debugger-mcp": "./dist/index.js"
+    "clens-mcp": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",

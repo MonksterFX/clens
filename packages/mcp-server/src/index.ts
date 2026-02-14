@@ -2,8 +2,12 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
 import http from "node:http";
+
+/** Transport mode: "stdio" (default) or "sse". */
+const TRANSPORT = (process.env.MCP_TRANSPORT || "stdio").toLowerCase();
 
 const PORT = Number(process.env.MCP_HTTP_PORT) || 3100;
 const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
@@ -151,6 +155,40 @@ const httpServer = http.createServer(async (req, res) => {
     return;
   }
 
+  // GET /sse – establish SSE connection for MCP transport
+  if (req.method === "GET" && req.url === "/sse") {
+    const transport = new SSEServerTransport("/messages", res);
+    sseTransports.set(transport.sessionId, transport);
+
+    const server = createMcpServer();
+    await server.connect(transport);
+
+    transport.onclose = () => {
+      sseTransports.delete(transport.sessionId);
+    };
+
+    console.error(
+      `[clens-mcp] SSE session ${transport.sessionId} connected`
+    );
+    return;
+  }
+
+  // POST /messages?sessionId=xxx – receive MCP messages from SSE client
+  if (req.method === "POST" && req.url?.startsWith("/messages")) {
+    const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+    const sessionId = url.searchParams.get("sessionId") ?? "";
+    const transport = sseTransports.get(sessionId);
+
+    if (!transport) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Unknown or expired session" }));
+      return;
+    }
+
+    await transport.handlePostMessage(req, res);
+    return;
+  }
+
   // GET /health – simple health check
   if (req.method === "GET" && req.url === "/health") {
     // Check authorization
@@ -176,90 +214,106 @@ const httpServer = http.createServer(async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// MCP server – exposes the TaskFromBrowser tool over stdio
+// MCP server – exposes the TaskFromBrowser tool
 // ---------------------------------------------------------------------------
 
-const mcpServer = new McpServer({
-  name: "react-visual-debugger-mcp",
-  version: "0.1.0",
-});
+/** Creates a new McpServer instance with all tools registered. */
+function createMcpServer(): McpServer {
+  const server = new McpServer({
+    name: "clens-mcp",
+    version: "0.1.0",
+  });
 
-/** Retrieves the next pending task submitted from the browser. */
-mcpServer.registerTool(
-  "WaitTaskFromBrowser",
-  {
-    title: "Task From Browser",
-    description:
-      "Returns the next pending task submitted from the browser. " +
-      "The React visual debugger overlay POSTs tasks to this server, " +
-      "and this tool dequeues and returns them one at a time.",
-    inputSchema: {
-      peek: z
-        .boolean()
-        .optional()
-        .describe(
-          "If true, returns the next task without removing it from the queue."
-        ),
-      wait: z
-        .boolean()
-        .optional()
-        .describe(
-          "If true, blocks until a task is available instead of returning immediately. " +
-          "Respects the 'timeout' parameter (default 30 s)."
-        ),
-      timeout: z
-        .number()
-        .optional()
-        .describe(
-          "Maximum seconds to wait when 'wait' is true. Defaults to 30."
-        ),
+  registerTools(server);
+  return server;
+}
+
+/** Registers all MCP tools on the given server instance. */
+function registerTools(server: McpServer): void {
+  /** Retrieves the next pending task submitted from the browser. */
+  server.registerTool(
+    "WaitTaskFromBrowser",
+    {
+      title: "Task From Browser",
+      description:
+        "Returns the next pending task submitted from the browser. " +
+        "The clens overlay POSTs tasks to this server, " +
+        "and this tool dequeues and returns them one at a time.",
+      inputSchema: {
+        peek: z
+          .boolean()
+          .optional()
+          .describe(
+            "If true, returns the next task without removing it from the queue."
+          ),
+        wait: z
+          .boolean()
+          .optional()
+          .describe(
+            "If true, blocks until a task is available instead of returning immediately. " +
+            "Respects the 'timeout' parameter (default 30 s)."
+          ),
+        timeout: z
+          .number()
+          .optional()
+          .describe(
+            "Maximum seconds to wait when 'wait' is true. Defaults to 30."
+          ),
+      },
     },
-  },
-  async ({ peek, wait, timeout }) => {
-    // If wait flag is set and the queue is empty, block until a task arrives or timeout
-    if (wait && taskQueue.length === 0) {
-      const timeoutSecs = timeout ?? DEFAULT_WAIT_TIMEOUT_SECS;
-      const arrived = await waitForTask(timeoutSecs * 1000);
+    async ({ peek, wait, timeout }) => {
+      // If wait flag is set and the queue is empty, block until a task arrives or timeout
+      if (wait && taskQueue.length === 0) {
+        const timeoutSecs = timeout ?? DEFAULT_WAIT_TIMEOUT_SECS;
+        const arrived = await waitForTask(timeoutSecs * 1000);
 
-      if (!arrived) {
+        if (!arrived) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `No task arrived within ${timeoutSecs}s timeout.`,
+              },
+            ],
+          };
+        }
+      }
+
+      if (taskQueue.length === 0) {
         return {
           content: [
             {
               type: "text" as const,
-              text: `No task arrived within ${timeoutSecs}s timeout.`,
+              text: "No pending tasks from the browser.",
             },
           ],
         };
       }
-    }
 
-    if (taskQueue.length === 0) {
+      const task = peek ? taskQueue[0] : taskQueue.shift()!;
+
       return {
         content: [
           {
             type: "text" as const,
-            text: "No pending tasks from the browser.",
+            text: [
+              `Task: ${task.text}`,
+              `Submitted at: ${task.timestamp}`,
+              `Remaining in queue: ${taskQueue.length}`,
+            ].join("\n"),
           },
         ],
       };
     }
+  );
+}
 
-    const task = peek ? taskQueue[0] : taskQueue.shift()!;
+// ---------------------------------------------------------------------------
+// SSE session management
+// ---------------------------------------------------------------------------
 
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: [
-            `Task: ${task.text}`,
-            `Submitted at: ${task.timestamp}`,
-            `Remaining in queue: ${taskQueue.length}`,
-          ].join("\n"),
-        },
-      ],
-    };
-  }
-);
+/** Active SSE transports keyed by session ID. */
+const sseTransports = new Map<string, SSEServerTransport>();
 
 // ---------------------------------------------------------------------------
 // Start both servers
@@ -280,7 +334,7 @@ function listenWithRetry(
           attempt++;
           const next = p + 1;
           console.error(
-            `[react-visual-debugger-mcp] Port ${p} in use, trying ${next}...`
+            `[clens-mcp] Port ${p} in use, trying ${next}...`
           );
           tryListen(next);
         } else {
@@ -295,18 +349,26 @@ function listenWithRetry(
   });
 }
 
-/** Boots the HTTP receiver and the stdio MCP transport. */
+/** Boots the HTTP receiver and the chosen MCP transport. */
 async function main() {
-  // Start HTTP server for browser task submissions, retrying if port is taken
+  // Start HTTP server for browser task submissions (and SSE if enabled)
   const actualPort = await listenWithRetry(httpServer, PORT);
   console.error(
-    `[react-visual-debugger-mcp] HTTP server listening on http://localhost:${actualPort}`
+    `[clens-mcp] HTTP server listening on http://localhost:${actualPort}`
   );
 
-  // Connect MCP server over stdio
-  const transport = new StdioServerTransport();
-  await mcpServer.connect(transport);
-  console.error("[react-visual-debugger-mcp] MCP server running on stdio");
+  if (TRANSPORT === "sse") {
+    // SSE mode – MCP clients connect via GET /sse on the HTTP server
+    console.error(
+      `[clens-mcp] MCP transport: SSE (connect at http://localhost:${actualPort}/sse)`
+    );
+  } else {
+    // stdio mode (default) – MCP client communicates over stdin/stdout
+    const mcpServer = createMcpServer();
+    const transport = new StdioServerTransport();
+    await mcpServer.connect(transport);
+    console.error("[clens-mcp] MCP transport: stdio");
+  }
 }
 
 main().catch((err) => {

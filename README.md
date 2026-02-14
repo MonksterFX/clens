@@ -1,4 +1,4 @@
-# vite-react-inspector-overlay
+# clens
 
 A tiny dev-only React component inspector overlay for Vite.
 
@@ -43,7 +43,7 @@ Example using **esm.sh**:
 
 ```html
 <script type="module">
-  import { enableInspectorOverlay } from "https://esm.sh/vite-react-inspector-overlay"
+  import { enableInspectorOverlay } from "https://esm.sh/clens"
 
   enableInspectorOverlay()
 </script>
