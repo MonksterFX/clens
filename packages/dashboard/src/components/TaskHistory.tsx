@@ -32,7 +32,8 @@ export function TaskHistory({ history }: TaskHistoryProps) {
                 <div className="task-text">{task.text}</div>
                 <div className="task-meta">
                   <span className="task-time">
-                    {formatTime(task.timestamp)} → {formatTime(task.completedAt)}
+                    {formatTime(task.timestamp)} →{" "}
+                    {formatTime(task.completedAt)}
                   </span>
                   <span className="task-id">{task.id.slice(0, 8)}</span>
                 </div>

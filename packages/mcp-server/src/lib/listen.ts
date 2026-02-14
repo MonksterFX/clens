@@ -18,9 +18,7 @@ export function listenWithRetry(
         if (err.code === "EADDRINUSE" && attempt < maxRetries) {
           attempt++;
           const next = p + 1;
-          console.error(
-            `[clens-mcp] Port ${p} in use, trying ${next}...`
-          );
+          console.error(`[clens-mcp] Port ${p} in use, trying ${next}...`);
           tryListen(next);
         } else {
           reject(err);

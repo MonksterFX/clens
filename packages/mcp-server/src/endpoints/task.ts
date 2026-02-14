@@ -7,7 +7,6 @@ import http from "node:http";
 import { readBody } from "../lib/http.js";
 import { isAuthorized } from "../middleware/auth.js";
 import * as taskQueue from "../state/task-queue.js";
-import type { BrowserTask } from "../types.js";
 
 /** Handles POST /task requests. */
 export async function handleTask(
@@ -30,10 +29,15 @@ export async function handleTask(
       return;
     }
 
-    const task = taskQueue.enqueue({ text, timestamp: new Date().toISOString() });
+    const task = taskQueue.enqueue({
+      text,
+      timestamp: new Date().toISOString(),
+    });
 
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true, queued: taskQueue.size(), id: task.id }));
+    res.end(
+      JSON.stringify({ ok: true, queued: taskQueue.size(), id: task.id })
+    );
   } catch {
     res.writeHead(400, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Invalid JSON body" }));

@@ -37,4 +37,4 @@ export const TOOLTIP_STYLES = `
     margin: 6px 0 0 0;
     position-try-fallbacks: --inspector-br, --inspector-tl, --inspector-tr;
   }
-`
+`;

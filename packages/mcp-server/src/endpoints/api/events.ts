@@ -30,7 +30,7 @@ export async function handleEvents(
   });
 
   // Send initial connection message
-  res.write("data: {\"type\":\"connected\"}\n\n");
+  res.write('data: {"type":"connected"}\n\n');
 
   // Add to active connections
   connections.add(res);

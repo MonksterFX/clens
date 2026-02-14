@@ -11,7 +11,10 @@ function getApiBase(): string {
 }
 
 /** Common fetch wrapper with auth header. */
-async function fetchApi(path: string, options: RequestInit = {}): Promise<Response> {
+async function fetchApi(
+  path: string,
+  options: RequestInit = {}
+): Promise<Response> {
   const url = `${getApiBase()}${path}`;
   return fetch(url, {
     ...options,

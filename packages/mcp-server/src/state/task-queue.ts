@@ -107,7 +107,9 @@ export function waitForTask(timeoutMs: number): Promise<boolean> {
 }
 
 /** Subscribes to dashboard events. Returns an unsubscribe function. */
-export function subscribe(listener: (event: DashboardEvent) => void): () => void {
+export function subscribe(
+  listener: (event: DashboardEvent) => void
+): () => void {
   eventListeners.push(listener);
   return () => {
     const idx = eventListeners.indexOf(listener);

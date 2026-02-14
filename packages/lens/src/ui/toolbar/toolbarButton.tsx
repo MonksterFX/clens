@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState } from "react";
 
 /**
  * Reusable toolbar button with hover/active states.
@@ -9,12 +9,12 @@ export function ToolbarButton({
   title,
   active = false,
 }: {
-  children: React.ReactNode
-  onClick: () => void
-  title?: string
-  active?: boolean
+  children: React.ReactNode;
+  onClick: () => void;
+  title?: string;
+  active?: boolean;
 }) {
-  const [hovered, setHovered] = useState(false)
+  const [hovered, setHovered] = useState(false);
 
   return (
     <button
@@ -45,7 +45,7 @@ export function ToolbarButton({
     >
       {children}
     </button>
-  )
+  );
 }
 
 /**
@@ -61,5 +61,5 @@ export function Divider() {
         flexShrink: 0,
       }}
     />
-  )
+  );
 }

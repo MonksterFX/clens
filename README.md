@@ -16,7 +16,7 @@ It adds a **floating draggable button** that enables "Tooltip Mode":
 ✅ Tooltip mode ON/OFF  
 ✅ Hover → component + source file + line number  
 ✅ Works in React + Vite dev mode  
-✅ Lightweight, no config beyond Babel source support  
+✅ Lightweight, no config beyond Babel source support
 
 ---
 
@@ -41,32 +41,22 @@ dist/index.d.ts
 
 Example using **esm.sh**:
 
-```html
+````html
 <script type="module">
-  import { enableInspectorOverlay } from "https://esm.sh/clens"
+  import { enableInspectorOverlay } from "https://esm.sh/clens";
 
-  enableInspectorOverlay()
+  enableInspectorOverlay();
 </script>
 
-
-3. Add It to Your Vite React App
-
-The best place is inside your main.tsx or main.jsx:
-
-```ts
-import React from "react"
-import ReactDOM from "react-dom/client"
-import App from "./App"
-
-// Browser/CDN import
-import { enableInspectorOverlay } from "https://esm.sh/vite-react-inspector-overlay"
-
+3. Add It to Your Vite React App The best place is inside your main.tsx or
+main.jsx: ```ts import React from "react" import ReactDOM from
+"react-dom/client" import App from "./App" // Browser/CDN import import {
+enableInspectorOverlay } from "https://esm.sh/vite-react-inspector-overlay"
 enableInspectorOverlay()
-
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <App />
+<App />
 )
-```
+````
 
 # Required Vite Configuration
 
@@ -78,10 +68,24 @@ Install:
 
 npm install -D @babel/plugin-transform-react-jsx-source
 
-
 Then update your vite.config.ts:
 
 import react from "@vitejs/plugin-react"
+
+export default {
+plugins: [
+react({
+babel: {
+plugins: ["@babel/plugin-transform-react-jsx-source"],
+},
+}),
+],
+}
+
+## Usage
+
+```ts
+import react from "@vitejs/plugin-react";
 
 export default {
   plugins: [
@@ -91,21 +95,5 @@ export default {
       },
     }),
   ],
-}
-
-
-## Usage
-
-```ts
-import react from "@vitejs/plugin-react"
-
-export default {
-  plugins: [
-    react({
-      babel: {
-        plugins: ["@babel/plugin-transform-react-jsx-source"]
-      }
-    })
-  ]
-}
+};
 ```

@@ -1,61 +1,61 @@
-import React, { useState, useEffect } from "react"
-import { getConfig, setConfig } from "../lib/config/connection"
-import { checkHealth } from "../lib/services/health"
+import React, { useState, useEffect } from "react";
+import { getConfig, setConfig } from "../lib/config/connection";
+import { checkHealth } from "../lib/services/health";
 
 /**
  * Settings panel for configuring the connection to the MCP server.
  * Allows users to set the server URL and authentication token.
  */
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const [serverUrl, setServerUrl] = useState("")
-  const [token, setToken] = useState("")
+  const [serverUrl, setServerUrl] = useState("");
+  const [token, setToken] = useState("");
   const [testStatus, setTestStatus] = useState<
     "idle" | "testing" | "success" | "error"
-  >("idle")
+  >("idle");
 
   useEffect(() => {
-    const config = getConfig()
-    setServerUrl(config.serverUrl)
-    setToken(config.token)
-  }, [])
+    const config = getConfig();
+    setServerUrl(config.serverUrl);
+    setToken(config.token);
+  }, []);
 
   /** Tests the connection with the current values. */
   async function handleTestConnection() {
-    setTestStatus("testing")
+    setTestStatus("testing");
 
     // Temporarily apply the config for testing
-    const oldConfig = getConfig()
-    setConfig({ serverUrl, token })
+    const oldConfig = getConfig();
+    setConfig({ serverUrl, token });
 
-    const ok = await checkHealth()
-    setTestStatus(ok ? "success" : "error")
+    const ok = await checkHealth();
+    setTestStatus(ok ? "success" : "error");
 
     // Restore old config if test failed
     if (!ok) {
-      setConfig(oldConfig)
+      setConfig(oldConfig);
     }
 
-    setTimeout(() => setTestStatus("idle"), 2000)
+    setTimeout(() => setTestStatus("idle"), 2000);
   }
 
   /** Saves the configuration and closes the panel. */
   function handleSave() {
-    setConfig({ serverUrl, token })
-    onClose()
+    setConfig({ serverUrl, token });
+    onClose();
   }
 
   /** Handles Escape key to close the panel. */
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Escape") {
-      e.preventDefault()
-      e.stopPropagation()
-      onClose()
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
     }
   }
 
   /** Prevents click events from closing the panel when clicking inside. */
   function handlePanelClick(e: React.MouseEvent) {
-    e.stopPropagation()
+    e.stopPropagation();
   }
 
   const testLabel =
@@ -65,14 +65,14 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         ? "Connected!"
         : testStatus === "error"
           ? "Failed"
-          : "Test Connection"
+          : "Test Connection";
 
   const testBg =
     testStatus === "success"
       ? "#22c55e"
       : testStatus === "error"
         ? "#ef4444"
-        : "rgba(255,255,255,0.15)"
+        : "rgba(255,255,255,0.15)";
 
   return (
     <div
@@ -225,5 +225,5 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

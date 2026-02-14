@@ -71,7 +71,9 @@ export function TaskQueue({ tasks }: TaskQueueProps) {
               <div className="task-content">
                 <div className="task-text">{task.text}</div>
                 <div className="task-meta">
-                  <span className="task-time">{formatTime(task.timestamp)}</span>
+                  <span className="task-time">
+                    {formatTime(task.timestamp)}
+                  </span>
                   <span className="task-id">{task.id.slice(0, 8)}</span>
                 </div>
               </div>

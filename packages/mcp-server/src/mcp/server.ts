@@ -41,7 +41,7 @@ function registerTools(server: McpServer): void {
           .optional()
           .describe(
             "If true, blocks until a task is available instead of returning immediately. " +
-            "Respects the 'timeout' parameter (default 30 s)."
+              "Respects the 'timeout' parameter (default 30 s)."
           ),
         timeout: z
           .number()

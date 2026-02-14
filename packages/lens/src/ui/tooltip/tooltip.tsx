@@ -1,7 +1,7 @@
-import React, { useRef, useState } from "react"
-import type { ComponentInfo } from "../../types"
-import { formatInfoForAI, sendTask } from "../../lib/services/task"
-import { TOOLTIP_STYLES } from "./tooltipStyles"
+import React, { useRef, useState } from "react";
+import type { ComponentInfo } from "../../types";
+import { formatInfoForAI, sendTask } from "../../lib/services/task";
+import { TOOLTIP_STYLES } from "./tooltipStyles";
 
 /**
  * Displays component name and source location in a tooltip anchored to the
@@ -10,46 +10,46 @@ import { TOOLTIP_STYLES } from "./tooltipStyles"
  * Includes a copy button for pasting info into AI tools.
  */
 export function Tooltip({ info }: { info: ComponentInfo | null }) {
-  const [copied, setCopied] = useState(false)
-  const [taskText, setTaskText] = useState("")
+  const [copied, setCopied] = useState(false);
+  const [taskText, setTaskText] = useState("");
   const [taskStatus, setTaskStatus] = useState<
     "idle" | "sending" | "sent" | "error"
-  >("idle")
-  const inputRef = useRef<HTMLInputElement>(null)
+  >("idle");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  if (!info) return null
+  if (!info) return null;
 
   /** Copies the component info to the clipboard. */
   function handleCopy() {
     navigator.clipboard.writeText(formatInfoForAI(info)).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
   }
 
   /** Sends the task text to the MCP server and resets the input. */
   async function handleSendTask() {
-    const text = taskText.trim()
-    if (!text) return
+    const text = taskText.trim();
+    if (!text) return;
 
-    setTaskStatus("sending")
+    setTaskStatus("sending");
     try {
-      await sendTask(text, info)
-      setTaskStatus("sent")
-      setTaskText("")
-      setTimeout(() => setTaskStatus("idle"), 1500)
+      await sendTask(text, info);
+      setTaskStatus("sent");
+      setTaskText("");
+      setTimeout(() => setTaskStatus("idle"), 1500);
     } catch {
-      setTaskStatus("error")
-      setTimeout(() => setTaskStatus("idle"), 2000)
+      setTaskStatus("error");
+      setTimeout(() => setTaskStatus("idle"), 2000);
     }
   }
 
   /** Submits on Enter key press. */
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter") {
-      e.preventDefault()
-      e.stopPropagation()
-      handleSendTask()
+      e.preventDefault();
+      e.stopPropagation();
+      handleSendTask();
     }
   }
 
@@ -60,14 +60,14 @@ export function Tooltip({ info }: { info: ComponentInfo | null }) {
         ? "Sent!"
         : taskStatus === "error"
           ? "Error"
-          : "Send"
+          : "Send";
 
   const sendBg =
     taskStatus === "sent"
       ? "#22c55e"
       : taskStatus === "error"
         ? "#ef4444"
-        : "rgba(255,255,255,0.15)"
+        : "rgba(255,255,255,0.15)";
 
   return (
     <>
@@ -154,8 +154,7 @@ export function Tooltip({ info }: { info: ComponentInfo | null }) {
                   ? "default"
                   : "pointer",
               flexShrink: 0,
-              opacity:
-                taskStatus === "sending" || !taskText.trim() ? 0.5 : 1,
+              opacity: taskStatus === "sending" || !taskText.trim() ? 0.5 : 1,
               transition: "background 0.2s, opacity 0.2s",
             }}
             title="Send task to AI agent"
@@ -165,5 +164,5 @@ export function Tooltip({ info }: { info: ComponentInfo | null }) {
         </div>
       </div>
     </>
-  )
+  );
 }

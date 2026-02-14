@@ -58,11 +58,7 @@ export function App() {
       <div style={styles.card}>
         <h1 style={styles.title}>Todo App</h1>
         <TodoInput onAdd={addTodo} />
-        <TodoList
-          todos={todos}
-          onToggle={toggleTodo}
-          onDelete={deleteTodo}
-        />
+        <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} />
         {todos.length > 0 && (
           <p style={styles.footer}>
             {todos.filter((t) => t.completed).length} / {todos.length} completed

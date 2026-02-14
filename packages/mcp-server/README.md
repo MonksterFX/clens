@@ -48,11 +48,11 @@ This will start the dashboard at `http://localhost:5173` with hot module replace
 
 Returns the next pending task submitted from the browser.
 
-| Parameter | Type    | Required | Description                                              |
-| --------- | ------- | -------- | -------------------------------------------------------- |
-| `peek`    | boolean | No       | If true, returns the next task without removing it from the queue. |
+| Parameter | Type    | Required | Description                                                                 |
+| --------- | ------- | -------- | --------------------------------------------------------------------------- |
+| `peek`    | boolean | No       | If true, returns the next task without removing it from the queue.          |
 | `wait`    | boolean | No       | If true, blocks until a task is available instead of returning immediately. |
-| `timeout` | number  | No       | Maximum seconds to wait when `wait` is true. Defaults to 30. |
+| `timeout` | number  | No       | Maximum seconds to wait when `wait` is true. Defaults to 30.                |
 
 **Response** — a text content block with the task description, submission timestamp, and remaining queue depth. Returns `"No pending tasks from the browser."` when the queue is empty (without wait), or `"No task arrived within {timeout}s timeout."` when wait timeout expires.
 
@@ -65,11 +65,13 @@ Returns the next pending task submitted from the browser.
 Submit a task from the browser.
 
 **Request:**
+
 ```json
 { "text": "Fix the button styling in TodoItem component" }
 ```
 
 **Response (200 OK):**
+
 ```json
 { "ok": true, "queued": 1, "id": "a1b2c3d4-..." }
 ```
@@ -81,6 +83,7 @@ Submit a task from the browser.
 Health check.
 
 **Response:**
+
 ```json
 { "status": "ok", "pending": 0, "authenticated": false }
 ```
@@ -90,6 +93,7 @@ Health check.
 Server status for dashboard.
 
 **Response:**
+
 ```json
 {
   "uptime": 123456,
@@ -107,6 +111,7 @@ Server status for dashboard.
 List all pending tasks in the queue.
 
 **Response:**
+
 ```json
 {
   "tasks": [
@@ -124,6 +129,7 @@ List all pending tasks in the queue.
 List recently completed tasks (last 50).
 
 **Response:**
+
 ```json
 {
   "history": [
@@ -142,6 +148,7 @@ List recently completed tasks (last 50).
 Clear all pending tasks from the queue.
 
 **Response:**
+
 ```json
 { "ok": true }
 ```
@@ -151,11 +158,13 @@ Clear all pending tasks from the queue.
 Remove a specific task by its ID.
 
 **Response (200 OK):**
+
 ```json
 { "ok": true }
 ```
 
 **Response (404 Not Found):**
+
 ```json
 { "error": "Task not found" }
 ```
@@ -167,6 +176,7 @@ Remove a specific task by its ID.
 Server-Sent Events (SSE) stream for real-time dashboard updates.
 
 **Event types:**
+
 - `connected` — Initial connection established
 - `task_enqueued` — New task added to queue
 - `task_dequeued` — Task removed and completed
@@ -174,6 +184,7 @@ Server-Sent Events (SSE) stream for real-time dashboard updates.
 - `queue_cleared` — All tasks cleared
 
 **Example event:**
+
 ```
 data: {"type":"task_enqueued","task":{"id":"...","text":"...","timestamp":"..."}}
 ```
@@ -185,6 +196,7 @@ data: {"type":"task_enqueued","task":{"id":"...","text":"...","timestamp":"..."}
 Web interface for monitoring and managing tasks. Access at `http://localhost:3100/dashboard`.
 
 **Features:**
+
 - Real-time server status (uptime, queue size, SSE sessions)
 - Live task queue with individual delete buttons
 - Task history (last 50 completed tasks)
@@ -228,8 +240,8 @@ MCP_TRANSPORT=sse npm run dev
 
 ## Environment variables
 
-| Variable        | Default | Description                                      |
-| --------------- | ------- | ------------------------------------------------ |
-| `MCP_HTTP_PORT` | `3100`  | Port for the HTTP server (tasks + SSE).          |
-| `MCP_TRANSPORT` | `stdio` | MCP transport mode: `stdio` or `sse`.            |
-| `MCP_AUTH_TOKEN` | —      | Optional Bearer token for HTTP endpoint auth.    |
+| Variable         | Default | Description                                   |
+| ---------------- | ------- | --------------------------------------------- |
+| `MCP_HTTP_PORT`  | `3100`  | Port for the HTTP server (tasks + SSE).       |
+| `MCP_TRANSPORT`  | `stdio` | MCP transport mode: `stdio` or `sse`.         |
+| `MCP_AUTH_TOKEN` | —       | Optional Bearer token for HTTP endpoint auth. |

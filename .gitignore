@@ -35,3 +35,6 @@ mcp/package-lock.json
 .vscode/
 .cursor/
 .idea/
+
+# Temporary files
+tasks/

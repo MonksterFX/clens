@@ -28,9 +28,7 @@ export async function handleSseConnect(
     sseTransports.delete(transport.sessionId);
   };
 
-  console.error(
-    `[clens-mcp] SSE session ${transport.sessionId} connected`
-  );
+  console.error(`[clens-mcp] SSE session ${transport.sessionId} connected`);
 }
 
 /** Handles POST /messages?sessionId=xxx — relays MCP messages for an active session. */

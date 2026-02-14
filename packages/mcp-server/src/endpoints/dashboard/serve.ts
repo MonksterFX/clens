@@ -44,30 +44,32 @@ export async function handleDashboard(
 ): Promise<void> {
   try {
     const dashboardDir = getDashboardDir();
-    
+
     // Remove /dashboard prefix and get requested path
     let requestPath = req.url?.replace(/^\/dashboard\/?/, "") || "";
-    
+
     // Default to index.html for directory requests or SPA routing
     if (!requestPath || requestPath.endsWith("/")) {
       requestPath = "index.html";
     }
-    
+
     // Security: prevent directory traversal
-    const safePath = path.normalize(requestPath).replace(/^(\.\.(\/|\\|$))+/, "");
+    const safePath = path
+      .normalize(requestPath)
+      .replace(/^(\.\.(\/|\\|$))+/, "");
     let filePath = path.join(dashboardDir, safePath);
-    
+
     // Try to read the file
     try {
       const stats = await fs.stat(filePath);
-      
+
       if (stats.isDirectory()) {
         filePath = path.join(filePath, "index.html");
       }
-      
+
       const content = await fs.readFile(filePath);
       const mimeType = getMimeType(filePath);
-      
+
       res.writeHead(200, {
         "Content-Type": mimeType,
         "Content-Length": content.length,
@@ -86,7 +88,9 @@ export async function handleDashboard(
           res.end(content);
         } catch {
           res.writeHead(404, { "Content-Type": "text/plain" });
-          res.end("Dashboard not found. Run 'npm run build' in packages/dashboard.");
+          res.end(
+            "Dashboard not found. Run 'npm run build' in packages/dashboard."
+          );
         }
       } else {
         throw err;

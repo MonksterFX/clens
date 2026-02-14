@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "@clens/lens": "*"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx-source": "^7.27.1",
