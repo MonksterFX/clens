@@ -30,11 +30,10 @@ export async function handleTask(
       return;
     }
 
-    const task: BrowserTask = { text, timestamp: new Date().toISOString() };
-    taskQueue.enqueue(task);
+    const task = taskQueue.enqueue({ text, timestamp: new Date().toISOString() });
 
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true, queued: taskQueue.size() }));
+    res.end(JSON.stringify({ ok: true, queued: taskQueue.size(), id: task.id }));
   } catch {
     res.writeHead(400, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Invalid JSON body" }));

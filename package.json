@@ -8,10 +8,11 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "concurrently --kill-others -n dashboard,mcp -c blue,green \"npm run dev -w @clens/dashboard\" \"npm run dev -w @clens/mcp-server\"",
     "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "typescript": "^5.9.3"
   }
 }
