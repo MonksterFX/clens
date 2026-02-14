@@ -6,6 +6,7 @@ import { z } from "zod";
 import http from "node:http";
 
 const PORT = Number(process.env.MCP_HTTP_PORT) || 3100;
+const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
 
 /**
  * In-memory store for tasks submitted from the browser.
@@ -17,6 +18,47 @@ interface BrowserTask {
 }
 
 const taskQueue: BrowserTask[] = [];
+
+/**
+ * Listeners waiting for the next task to arrive.
+ * Resolved when a task is pushed to the queue.
+ */
+const taskWaiters: Array<() => void> = [];
+
+/** Notifies all registered waiters that a new task is available. */
+function notifyWaiters() {
+  while (taskWaiters.length > 0) {
+    const resolve = taskWaiters.shift()!;
+    resolve();
+  }
+}
+
+/** Returns a promise that resolves when a task is enqueued or the timeout expires. */
+function waitForTask(timeoutMs: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (taskQueue.length > 0) {
+      resolve(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      // Remove this waiter on timeout
+      const idx = taskWaiters.indexOf(onTask);
+      if (idx !== -1) taskWaiters.splice(idx, 1);
+      resolve(false);
+    }, timeoutMs);
+
+    function onTask() {
+      clearTimeout(timer);
+      resolve(true);
+    }
+
+    taskWaiters.push(onTask);
+  });
+}
+
+/** Default timeout (in seconds) when waiting for a task. */
+const DEFAULT_WAIT_TIMEOUT_SECS = 30;
 
 // ---------------------------------------------------------------------------
 // HTTP server – receives tasks POSTed from the browser
@@ -45,6 +87,22 @@ function isLocalhostOrigin(origin: string | undefined): boolean {
   }
 }
 
+/**
+ * Validates the Authorization header against the configured token.
+ * Returns true if auth is disabled or the token matches.
+ */
+function isAuthorized(authHeader: string | undefined): boolean {
+  // If no token is configured, skip auth
+  if (!AUTH_TOKEN) return true;
+
+  if (!authHeader) return false;
+
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+
+  return match[1] === AUTH_TOKEN;
+}
+
 /** Minimal HTTP server that accepts task submissions from the browser. */
 const httpServer = http.createServer(async (req, res) => {
   // CORS headers – only allow localhost origins (any port)
@@ -63,6 +121,13 @@ const httpServer = http.createServer(async (req, res) => {
 
   // POST /task – submit a new task from the browser
   if (req.method === "POST" && req.url === "/task") {
+    // Check authorization
+    if (!isAuthorized(req.headers.authorization)) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Unauthorized" }));
+      return;
+    }
+
     try {
       const body = JSON.parse(await readBody(req));
       const text = typeof body.text === "string" ? body.text.trim() : "";
@@ -75,6 +140,7 @@ const httpServer = http.createServer(async (req, res) => {
 
       const task: BrowserTask = { text, timestamp: new Date().toISOString() };
       taskQueue.push(task);
+      notifyWaiters();
 
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, queued: taskQueue.length }));
@@ -87,8 +153,21 @@ const httpServer = http.createServer(async (req, res) => {
 
   // GET /health – simple health check
   if (req.method === "GET" && req.url === "/health") {
+    // Check authorization
+    if (!isAuthorized(req.headers.authorization)) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Unauthorized" }));
+      return;
+    }
+
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", pending: taskQueue.length }));
+    res.end(
+      JSON.stringify({
+        status: "ok",
+        pending: taskQueue.length,
+        authenticated: !!AUTH_TOKEN,
+      })
+    );
     return;
   }
 
@@ -121,9 +200,39 @@ mcpServer.registerTool(
         .describe(
           "If true, returns the next task without removing it from the queue."
         ),
+      wait: z
+        .boolean()
+        .optional()
+        .describe(
+          "If true, blocks until a task is available instead of returning immediately. " +
+          "Respects the 'timeout' parameter (default 30 s)."
+        ),
+      timeout: z
+        .number()
+        .optional()
+        .describe(
+          "Maximum seconds to wait when 'wait' is true. Defaults to 30."
+        ),
     },
   },
-  async ({ peek }) => {
+  async ({ peek, wait, timeout }) => {
+    // If wait flag is set and the queue is empty, block until a task arrives or timeout
+    if (wait && taskQueue.length === 0) {
+      const timeoutSecs = timeout ?? DEFAULT_WAIT_TIMEOUT_SECS;
+      const arrived = await waitForTask(timeoutSecs * 1000);
+
+      if (!arrived) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `No task arrived within ${timeoutSecs}s timeout.`,
+            },
+          ],
+        };
+      }
+    }
+
     if (taskQueue.length === 0) {
       return {
         content: [

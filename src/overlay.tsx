@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from "react"
 import { resolveComponentInfo } from "./fiber"
 import { Tooltip } from "./tooltip"
-import { FloatingToggleButton } from "./button"
+import { Toolbar } from "./toolbar"
+import { SettingsPanel } from "./settings"
 
 const OUTLINE_STYLE = "2px solid #3b82f6"
 const ANCHOR_NAME = "--inspector-target"
@@ -17,6 +18,7 @@ export function InspectorOverlay() {
   const [enabled, setEnabled] = useState(false)
   const [info, setInfo] = useState<any>(null)
   const [anchored, setAnchored] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const hoveredRef = useRef<HTMLElement | null>(null)
   const anchoredRef = useRef<HTMLElement | null>(null)
   const prevOutlineRef = useRef<string>("")
@@ -115,8 +117,13 @@ export function InspectorOverlay() {
 
   return (
     <>
-      <FloatingToggleButton enabled={enabled} setEnabled={setEnabled} />
+      <Toolbar
+        enabled={enabled}
+        setEnabled={setEnabled}
+        onSettingsOpen={() => setSettingsOpen(true)}
+      />
       {enabled && anchored && <Tooltip info={info} />}
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </>
   )
 }

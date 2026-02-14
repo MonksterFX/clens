@@ -1,8 +1,7 @@
 // src/tooltip.tsx
 
 import React, { useRef, useState } from "react"
-
-const TASK_ENDPOINT = "http://localhost:3100/task"
+import { getConfig, getTaskEndpoint } from "./connection"
 
 /** Formats component info into an AI-friendly string for clipboard. */
 function formatInfoForAI(info: any): string {
@@ -14,9 +13,15 @@ async function sendTask(text: string, info: any): Promise<void> {
   const contextLine = `[${info.name} – ${info.file}:${info.line}]`
   const body = JSON.stringify({ text: `${text}\n${contextLine}` })
 
-  const res = await fetch(TASK_ENDPOINT, {
+  const config = getConfig()
+  const headers: HeadersInit = { "Content-Type": "application/json" }
+  if (config.token) {
+    headers["Authorization"] = `Bearer ${config.token}`
+  }
+
+  const res = await fetch(getTaskEndpoint(), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body,
   })
 

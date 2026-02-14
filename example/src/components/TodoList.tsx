@@ -32,8 +32,8 @@ const styles: Record<string, React.CSSProperties> = {
     listStyle: "none",
     margin: "1rem 0 0",
     padding: 0,
-    display: "flex",
-    flexDirection: "column",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
     gap: 6,
   },
   empty: {
