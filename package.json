@@ -1,0 +1,19 @@
+{
+    "name": "vite-react-inspector-overlay",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsdown"
+    },
+    "peerDependencies": {
+        "react": "^19.2.4",
+        "react-dom": ">=18"
+    },
+    "devDependencies": {
+        "tsdown": "^0.20.3",
+        "typescript": "^5.9.3"
+    }
+}

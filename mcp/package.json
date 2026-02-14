@@ -1,0 +1,21 @@
+{
+  "name": "react-visual-debugger-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "react-visual-debugger-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3"
+  }
+}
