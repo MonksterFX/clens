@@ -34,6 +34,7 @@ mcp/package-lock.json
 # IDE config files
 .vscode/
 .cursor/
+!.cursor/mcp*.json
 .idea/
 
 # Temporary files
