@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { checkHealth } from "../../lib/services/health";
 import { subscribe } from "../../lib/config/connection";
 import { ToolbarButton, Divider } from "./toolbarButton";
-import { InspectIcon, SettingsIcon } from "./icons";
+import { GripIcon, InspectIcon, SettingsIcon } from "./icons";
 
 type HealthStatus = "checking" | "connected" | "disconnected";
 
@@ -154,6 +154,30 @@ export function Toolbar({
         transition: dragging.current ? "none" : "opacity 0.2s",
       }}
     >
+      {/* Drag handle */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0 4px",
+          cursor: dragging.current ? "grabbing" : "grab",
+          opacity: 0.45,
+          transition: "opacity 0.15s",
+        }}
+        title="Drag to move toolbar"
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.opacity = "0.9";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.opacity = "0.45";
+        }}
+      >
+        <GripIcon />
+      </div>
+
+      <Divider />
+
       {/* Inspect toggle */}
       <ToolbarButton
         active={enabled}

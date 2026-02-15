@@ -1,6 +1,28 @@
 import React from "react";
 
 /**
+ * 6-dot grip icon indicating a draggable area (2 columns x 3 rows).
+ */
+export function GripIcon() {
+  return (
+    <svg
+      width="6"
+      height="14"
+      viewBox="0 0 6 14"
+      fill="currentColor"
+      style={{ display: "block" }}
+    >
+      <circle cx="1.5" cy="2" r="1.25" />
+      <circle cx="4.5" cy="2" r="1.25" />
+      <circle cx="1.5" cy="7" r="1.25" />
+      <circle cx="4.5" cy="7" r="1.25" />
+      <circle cx="1.5" cy="12" r="1.25" />
+      <circle cx="4.5" cy="12" r="1.25" />
+    </svg>
+  );
+}
+
+/**
  * Crosshair / inspect icon.
  */
 export function InspectIcon() {

@@ -8,12 +8,11 @@
     "example/*"
   ],
   "scripts": {
-    "build": "npm run build -w @clens/lens && npm run build -w @clens/react && npm run build -w @clens/angular && npm run build -w @clens/dashboard && npm run build -w @clens/mcp-server",
     "dev": "concurrently --kill-others -n dashboard,mcp -c blue,green \"npm run dev -w @clens/dashboard\" \"npm run dev -w @clens/mcp-server\"",
     "dev:full": "concurrently --kill-others -n lens,lens-react,lens-angular,dashboard,mcp,react-example,angular-example -c magenta,cyan,purple,blue,green,yellow,yellow \"npm run dev -w @clens/lens\" \"npm run dev -w @clens/react\" \"npm run dev -w @clens/angular\" \"npm run dev -w @clens/dashboard\" \"npm run dev -w @clens/mcp-server\" \"npm run dev -w example-react\" \"npm run dev -w example-angular\"",
     "dev:example": "concurrently --kill-others -n react-example,angular-example -c yellow,yellow \"npm run dev -w example-react\" \"npm run dev -w example-angular\"",
+    "build": "npm run build -w @clens/lens && npm run build -w @clens/react && npm run build -w @clens/angular && npm run build -w @clens/dashboard && npm run build -w @clens/mcp-server",
     "start": "npm run dev:full",
-    "clean": "rm -rf packages/*/dist packages/*/node_modules example/*/dist example/*/node_modules node_modules",
     "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
@@ -22,7 +21,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "prepare": "husky"
+    "prepare": "husky",
+    "clean": "rm -rf packages/*/dist packages/*/node_modules example/*/dist example/*/node_modules node_modules"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
