@@ -418,8 +418,7 @@ function formatTaskInfo(task: BrowserTask, footer: string): string {
 
 /** Formats a task as a list item. */
 function formatTaskListItem(task: BrowserTask): string {
-  const shortId = task.id.substring(0, 8);
-  const lines = [`[${task.status}]    ${shortId}  ${task.text}`];
+  const lines = [`[${task.status}] | ${task.id} | ${task.text}`];
 
   if (task.component) {
     let componentLine = `             Component: ${task.component.name}`;

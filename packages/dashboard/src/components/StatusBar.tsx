@@ -7,6 +7,7 @@ import type { ServerStatus } from "../lib/api";
 interface StatusBarProps {
   status: ServerStatus | null;
   connected: boolean;
+  activeTaskCount?: number;
 }
 
 /**
@@ -26,7 +27,12 @@ function formatUptime(ms: number): string {
   return `${seconds}s`;
 }
 
-export function StatusBar({ status, connected }: StatusBarProps) {
+/** Displays server status information including connection state and active queue. */
+export function StatusBar({
+  status,
+  connected,
+  activeTaskCount,
+}: StatusBarProps) {
   if (!status) {
     return (
       <div className="status-bar loading">
@@ -56,8 +62,8 @@ export function StatusBar({ status, connected }: StatusBarProps) {
         <span className="value">{status.port}</span>
       </div>
       <div className="status-item">
-        <span className="label">Queue:</span>
-        <span className="value">{status.queueSize}</span>
+        <span className="label">Active Queue:</span>
+        <span className="value">{activeTaskCount ?? status.queueSize}</span>
       </div>
       <div className="status-item">
         <span className="label">SSE Sessions:</span>

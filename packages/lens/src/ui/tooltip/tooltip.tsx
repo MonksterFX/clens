@@ -89,7 +89,7 @@ export function Tooltip({
       <div
         data-inspector-tooltip
         style={{
-          background: "rgba(0,0,0,0.85)",
+          background: "rgba(0,0,0,0.95)",
           color: "white",
           padding: "8px 10px",
           borderRadius: "10px",

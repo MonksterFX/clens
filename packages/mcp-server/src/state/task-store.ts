@@ -134,6 +134,29 @@ export function failTask(id: string, reason?: string): BrowserTask | undefined {
   return updatedTask;
 }
 
+/**
+ * Transitions a task from "completed" or "failed" back to "pending".
+ * Clears lifecycle fields and wakes any blocked waiters.
+ * Returns the updated task, or undefined if not found or invalid state.
+ */
+export function reopenTask(id: string): BrowserTask | undefined {
+  const task = store.get(id);
+  if (!task) return undefined;
+  if (task.status !== "completed" && task.status !== "failed") return undefined;
+
+  const updatedTask: BrowserTask = {
+    ...task,
+    status: "pending",
+    startedAt: undefined,
+    completedAt: undefined,
+    result: undefined,
+  };
+  store.set(id, updatedTask);
+  notifyWaiters();
+  emitEvent({ type: "task_enqueued", task: updatedTask });
+  return updatedTask;
+}
+
 /** Removes a specific task from the store by its ID. Returns true if found and removed. */
 export function removeById(id: string): boolean {
   const existed = store.has(id);

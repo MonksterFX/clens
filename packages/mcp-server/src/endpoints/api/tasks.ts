@@ -4,7 +4,7 @@
  * GET    /api/tasks         — list all tasks (optionally filtered by status)
  * GET    /api/tasks/:id     — get a single task by ID
  * GET    /api/tasks/history — list completed/failed tasks history
- * PATCH  /api/tasks/:id     — update task status (start/complete/fail)
+ * PATCH  /api/tasks/:id     — update task status (start/complete/fail/reopen)
  * DELETE /api/tasks         — clear all tasks
  * DELETE /api/tasks/:id     — remove a specific task by ID
  */
@@ -119,6 +119,18 @@ export async function handlePatchTask(
       }
       const reason = req.body?.reason as string | undefined;
       const updated = taskStore.failTask(id, reason);
+      res.json({ ok: true, task: updated });
+      break;
+    }
+
+    case "reopen": {
+      if (task.status !== "completed" && task.status !== "failed") {
+        res.status(400).json({
+          error: `Cannot reopen task: current status is '${task.status}' (expected 'completed' or 'failed')`,
+        });
+        return;
+      }
+      const updated = taskStore.reopenTask(id);
       res.json({ ok: true, task: updated });
       break;
     }

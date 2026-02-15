@@ -32,6 +32,7 @@ export interface ComponentInfo {
   name: string;
   file: string | undefined;
   line: number | undefined;
+  childPath?: string; // relative DOM path from the component root to a selected child element
   element?: string; // optional: specific element within the component
 }
 
@@ -87,6 +88,21 @@ export async function getHistory(): Promise<Task[]> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   return data.history;
+}
+
+/** A task in a terminal state (completed or failed). */
+export type CompletedTask = Task & { completedAt: string };
+
+/** Reopens a completed or failed task back to pending. */
+export async function reopenTask(id: string): Promise<Task> {
+  const res = await fetchApi(`/api/tasks/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "reopen" }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.task;
 }
 
 /** Clears all pending tasks. */

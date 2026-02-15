@@ -10,16 +10,23 @@ import { TaskHistory } from "./components/TaskHistory";
 
 export function App() {
   const status = useServerStatus();
-  const { tasks, history, connected } = useTaskEvents();
+  const { tasks, connected } = useTaskEvents();
+
+  const history = tasks.filter((task) => task.completedAt !== undefined);
+  const pending = tasks.filter((task) => task.completedAt === undefined);
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>clens Dashboard</h1>
+        <h1>clens Dashboard - beta</h1>
       </header>
-      <StatusBar status={status} connected={connected} />
+      <StatusBar
+        status={status}
+        connected={connected}
+        activeTaskCount={pending.length}
+      />
       <div className="panels">
-        <TaskQueue tasks={tasks} />
+        <TaskQueue tasks={pending} />
         <TaskHistory history={history} />
       </div>
     </div>

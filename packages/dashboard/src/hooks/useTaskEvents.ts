@@ -62,7 +62,16 @@ export function useTaskEvents(): TaskEventState {
             break;
 
           case "task_enqueued":
-            setTasks((prev) => [...prev, event.task]);
+            // Upsert: update if task already exists (e.g. reopened), otherwise add
+            setTasks((prev) => {
+              const exists = prev.some((t) => t.id === event.task.id);
+              if (exists) {
+                return prev.map((t) =>
+                  t.id === event.task.id ? event.task : t
+                );
+              }
+              return [...prev, event.task];
+            });
             break;
 
           case "task_started":

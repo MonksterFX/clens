@@ -64,14 +64,15 @@ body {
   display: flex;
   gap: 2rem;
   padding: 1rem 2rem;
-  background: var(--bg-tertiary);
+  background: var(--accent);
+  color: #ffffff;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
 
 .status-bar.loading {
   justify-content: center;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .status-item {
@@ -82,37 +83,43 @@ body {
 
 .status-item .label {
   font-weight: 500;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .status-item .value {
   font-family: "SF Mono", Monaco, Consolas, monospace;
   font-size: 0.9rem;
+  color: #ffffff;
 }
 
 .status-item .value.connected {
+  background: #ffffff;
   color: var(--success);
   font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
 }
 
 .status-item .value.disconnected {
+  background: #ffffff;
   color: var(--danger);
   font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
 }
 
 .panels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
   padding: 2rem;
   flex: 1;
-  align-items: start;
-}
-
-@media (max-width: 1024px) {
-  .panels {
-    grid-template-columns: 1fr;
-  }
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  overflow-y: scroll;
 }
 
 .panel {
@@ -122,7 +129,6 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 300px);
 }
 
 .panel-header {
@@ -131,12 +137,14 @@ body {
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-tertiary);
+  background: var(--accent);
+  color: #ffffff;
 }
 
 .panel-header h2 {
   font-size: 1.1rem;
   font-weight: 600;
+  color: inherit;
 }
 
 .task-list {
@@ -209,7 +217,16 @@ body {
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.panel-header .btn-clear {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.panel-header .btn-clear:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .btn-clear:hover:not(:disabled) {
@@ -235,4 +252,116 @@ body {
 .btn-delete:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.task-component-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-family: "SF Mono", Monaco, Consolas, monospace;
+  margin-bottom: 0.25rem;
+}
+
+.btn-details-toggle {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-details-toggle:hover {
+  color: var(--accent-hover);
+}
+
+.task-details {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.task-detail-row {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+.task-detail-row + .task-detail-row {
+  border-top: 1px solid var(--border);
+}
+
+.task-detail-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 5rem;
+  flex-shrink: 0;
+}
+
+.task-detail-value {
+  font-family: "SF Mono", Monaco, Consolas, monospace;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.task-detail-line {
+  color: var(--accent);
+}
+
+.btn-reopen {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-reopen:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-reopen:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.task-status-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  line-height: 1.4;
+}
+
+.task-status-badge--pending {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.task-status-badge--ongoing {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.task-status-badge--completed {
+  background: var(--success);
+  color: #ffffff;
+}
+
+.task-status-badge--failed {
+  background: var(--danger);
+  color: #ffffff;
 }
