@@ -8,37 +8,41 @@ import {
   getTasks,
   getHistory,
   type Task,
-  type CompletedTask,
   type DashboardEvent,
 } from "../lib/api";
 
 interface TaskEventState {
   tasks: Task[];
-  history: CompletedTask[];
   connected: boolean;
 }
 
 /**
  * Subscribes to real-time task events and maintains local state.
+ * All tasks are stored in a single list regardless of status.
  */
 export function useTaskEvents(): TaskEventState {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [history, setHistory] = useState<CompletedTask[]>([]);
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    // Initial fetch
+    // Initial fetch - load all tasks and history into one list
     async function init() {
       try {
-        const [taskData, historyData] = await Promise.all([
+        const [currentTasks, historyTasks] = await Promise.all([
           getTasks(),
           getHistory(),
         ]);
         if (mounted) {
-          setTasks(taskData);
-          setHistory(historyData);
+          // Combine current and history, removing duplicates
+          const allTasks = [...currentTasks];
+          historyTasks.forEach((histTask) => {
+            if (!allTasks.find((t) => t.id === histTask.id)) {
+              allTasks.push(histTask);
+            }
+          });
+          setTasks(allTasks);
         }
       } catch (err) {
         console.error("Failed to fetch initial data:", err);
@@ -61,12 +65,13 @@ export function useTaskEvents(): TaskEventState {
             setTasks((prev) => [...prev, event.task]);
             break;
 
-          case "task_dequeued":
-            setTasks((prev) => prev.filter((t) => t.id !== event.task.id));
-            setHistory((prev) => [
-              { ...event.task, completedAt: new Date().toISOString() },
-              ...prev,
-            ]);
+          case "task_started":
+          case "task_completed":
+          case "task_failed":
+            // Update task in place
+            setTasks((prev) =>
+              prev.map((t) => (t.id === event.task.id ? event.task : t))
+            );
             break;
 
           case "task_deleted":
@@ -90,5 +95,5 @@ export function useTaskEvents(): TaskEventState {
     };
   }, []);
 
-  return { tasks, history, connected };
+  return { tasks, connected };
 }

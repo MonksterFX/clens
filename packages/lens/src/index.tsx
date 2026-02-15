@@ -33,3 +33,6 @@ export function enableInspectorOverlay(
 // Export types for framework-specific packages
 export type { ComponentInfo, ComponentResolver } from "./types";
 export type { ConnectionConfig } from "./lib/config/connection";
+
+// Export DOM utilities for framework-specific resolvers
+export { computeChildPath } from "./lib/dom/childPath";

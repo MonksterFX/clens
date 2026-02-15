@@ -19,9 +19,15 @@ export async function sendTask(
   text: string,
   info: ComponentInfo
 ): Promise<void> {
-  const childSuffix = info.childPath ? ` → ${info.childPath}` : "";
-  const contextLine = `[${info.name} – ${info.file}:${info.line}${childSuffix}]`;
-  const body = JSON.stringify({ text: `${text}\n${contextLine}` });
+  const body = JSON.stringify({
+    text,
+    component: {
+      name: info.name,
+      file: info.file,
+      line: info.line,
+      ...(info.element ? { element: info.element } : {}),
+    },
+  });
 
   const config = getConfig();
   const headers: HeadersInit = { "Content-Type": "application/json" };

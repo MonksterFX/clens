@@ -1,3 +1,4 @@
+import { computeChildPath } from "@clens/lens";
 import type { ComponentInfo } from "@clens/lens";
 
 /**
@@ -27,6 +28,13 @@ export function resolveComponentInfo(
   let component = ng.getComponent(element) ?? ng.getOwningComponent(element);
   if (!component) return null;
 
+  // Compute relative DOM path from the component's host element to the target
+  const hostElement: HTMLElement | null =
+    ng.getHostElement?.(component) ?? null;
+  const childPath = hostElement
+    ? computeChildPath(hostElement, element)
+    : undefined;
+
   const { className, filePath, lineNumber } = component.constructor.ɵcmp
     .debugInfo as AngularDebugInfo;
 
@@ -34,6 +42,6 @@ export function resolveComponentInfo(
     name: className,
     file: filePath,
     line: lineNumber,
-    childPath: undefined,
+    childPath,
   };
 }

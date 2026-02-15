@@ -5,7 +5,7 @@
 import type { Request, Response } from "express";
 
 import { AUTH_TOKEN } from "../lib/config.js";
-import * as taskQueue from "../state/task-queue.js";
+import * as taskStore from "../state/task-store.js";
 
 /** Handles GET /health requests. */
 export async function handleHealth(
@@ -14,7 +14,7 @@ export async function handleHealth(
 ): Promise<void> {
   res.json({
     status: "ok",
-    pending: taskQueue.size(),
+    pending: taskStore.size(),
     authenticated: !!AUTH_TOKEN,
   });
 }

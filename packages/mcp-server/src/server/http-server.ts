@@ -7,6 +7,7 @@
 
 import http from "node:http";
 import express from "express";
+import type { Request, Response, NextFunction } from "express";
 
 import { corsMiddleware } from "../middleware/cors.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -17,7 +18,9 @@ import { handleSseConnect, handleSseMessage } from "../endpoints/sse.js";
 import { handleStatus } from "../endpoints/api/status.js";
 import {
   handleGetTasks,
+  handleGetTask,
   handleGetHistory,
+  handlePatchTask,
   handleClearTasks,
   handleDeleteTask,
 } from "../endpoints/api/tasks.js";
@@ -48,9 +51,12 @@ export function createHttpServer(): http.Server {
   // ── API routes (all require auth) ──────────────────────────────────
   const api = express.Router();
   api.use(requireAuth);
+  api.use(jsonParser); // API routes need JSON parsing for PATCH
   api.get("/status", handleStatus);
   api.get("/tasks/history", handleGetHistory);
+  api.get("/tasks/:id", handleGetTask);
   api.get("/tasks", handleGetTasks);
+  api.patch("/tasks/:id", handlePatchTask);
   api.delete("/tasks/:id", handleDeleteTask);
   api.delete("/tasks", handleClearTasks);
   api.get("/events", handleEvents);
@@ -60,12 +66,12 @@ export function createHttpServer(): http.Server {
   app.use("/dashboard", createDashboardRouter());
 
   // ── 404 fallback ───────────────────────────────────────────────────
-  app.use((req, res, next) => {
+  app.use((_req: Request, res: Response, _next: NextFunction) => {
     res.status(404).json({ error: "Not found" });
   });
 
   // ── Global error handler ───────────────────────────────────────────
-  app.use((err: any, req: any, res: any, next: any) => {
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal server error";
     res.status(status).json({ error: message });

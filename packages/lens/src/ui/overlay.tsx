@@ -10,6 +10,40 @@ const CHILDREN_OUTLINE_STYLE = "2px dashed #3b82f6";
 const ANCHOR_NAME = "--inspector-target";
 
 /**
+ * Derives a semantic element identifier from a DOM element.
+ * Returns tagName + #id or .className (e.g. "button.submit", "input#email").
+ * Returns undefined if the element has no meaningful identifier.
+ */
+function deriveElementIdentifier(element: HTMLElement): string | undefined {
+  const tag = element.tagName.toLowerCase();
+
+  // Use ID if present
+  if (element.id) {
+    return `${tag}#${element.id}`;
+  }
+
+  // Use first meaningful class (skip generic ones)
+  if (element.className && typeof element.className === "string") {
+    const classes = element.className.split(/\s+/).filter((c) => c.trim());
+    const meaningfulClass = classes.find(
+      (c) =>
+        !["active", "disabled", "selected", "hover"].includes(c.toLowerCase())
+    );
+    if (meaningfulClass) {
+      return `${tag}.${meaningfulClass}`;
+    }
+  }
+
+  // If no id or meaningful class, just return the tag name for common interactive elements
+  const interactiveTags = ["button", "input", "select", "textarea", "a", "img"];
+  if (interactiveTags.includes(tag)) {
+    return tag;
+  }
+
+  return undefined;
+}
+
+/**
  * Main inspector overlay that highlights hovered elements with a blue outline
  * and shows component info in a tooltip on click.
  * Uses the CSS Anchor Positioning API to anchor the tooltip to the clicked element.
@@ -19,6 +53,7 @@ export function InspectorOverlay() {
   const [info, setInfo] = useState<ComponentInfo | null>(null);
   const [anchored, setAnchored] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [childSelection, setChildSelection] = useState(true);
   const hoveredRef = useRef<HTMLElement | null>(null);
   const anchoredRef = useRef<HTMLElement | null>(null);
   const prevOutlineRef = useRef<string>("");
@@ -89,7 +124,9 @@ export function InspectorOverlay() {
       target.style.outline = OUTLINE_STYLE;
       hoveredRef.current = target;
 
-      outlineChildren(target);
+      if (childSelection) {
+        outlineChildren(target);
+      }
     }
 
     /** Sets anchor-name on the clicked element and resolves component info. */
@@ -116,10 +153,20 @@ export function InspectorOverlay() {
         target.style.setProperty("anchor-name", ANCHOR_NAME);
         anchoredRef.current = target;
 
-        // Outline direct children with a dashed border
-        outlineChildren(target);
+        // Outline direct children with a dashed border (when child selection is on)
+        if (childSelection) {
+          outlineChildren(target);
+        }
 
-        setInfo(resolved);
+        // Derive element identifier from the clicked target
+        const element = deriveElementIdentifier(target);
+
+        // Strip childPath when child selection is disabled
+        setInfo(
+          childSelection
+            ? { ...resolved, element }
+            : { ...resolved, childPath: undefined, element }
+        );
         setAnchored(true);
       }
     }
@@ -146,7 +193,7 @@ export function InspectorOverlay() {
       window.removeEventListener("click", onClick, true);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [enabled]);
+  }, [enabled, childSelection]);
 
   return (
     <>
@@ -155,7 +202,13 @@ export function InspectorOverlay() {
         setEnabled={setEnabled}
         onSettingsOpen={() => setSettingsOpen(true)}
       />
-      {enabled && anchored && <Tooltip info={info} />}
+      {enabled && anchored && (
+        <Tooltip
+          info={info}
+          childSelection={childSelection}
+          setChildSelection={setChildSelection}
+        />
+      )}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </>
   );
