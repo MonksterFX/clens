@@ -56,7 +56,7 @@ export function App() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Todo App</h1>
+        <h1 style={styles.title}>Todo App - React</h1>
         <TodoInput onAdd={addTodo} />
         <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} />
         {todos.length > 0 && (

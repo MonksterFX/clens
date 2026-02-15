@@ -10,10 +10,16 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "types": ["vite/client"]
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+    "noEmit": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@clens/angular": ["../../packages/angular/src"],
+      "@clens/lens": ["../../packages/lens/src"]
+    }
   },
   "include": ["src"]
 }

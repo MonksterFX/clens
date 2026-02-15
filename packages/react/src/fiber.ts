@@ -1,4 +1,4 @@
-import type { ComponentInfo } from "../types";
+import type { ComponentInfo } from "@clens/lens";
 
 /**
  * Retrieves the React fiber node attached to a DOM element.

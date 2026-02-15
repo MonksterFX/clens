@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { ComponentInfo } from "../types";
-import { resolveComponentInfo } from "../utils/fiber";
+import { getComponentResolver } from "../resolver";
 import { Tooltip } from "./tooltip";
 import { Toolbar } from "./toolbar";
 import { SettingsPanel } from "./settingsPanel";
@@ -54,7 +54,7 @@ export function InspectorOverlay() {
       if (!target || target === hoveredRef.current) return;
 
       const overlayRoot = document.getElementById(
-        "__vite_react_inspector_overlay__"
+        "__clens_inspector_overlay__"
       );
       if (overlayRoot?.contains(target)) return;
 
@@ -71,14 +71,15 @@ export function InspectorOverlay() {
       if (!target) return;
 
       const overlayRoot = document.getElementById(
-        "__vite_react_inspector_overlay__"
+        "__clens_inspector_overlay__"
       );
       if (overlayRoot?.contains(target)) return;
 
       e.preventDefault();
       e.stopPropagation();
 
-      const resolved = resolveComponentInfo(target);
+      const resolver = getComponentResolver();
+      const resolved = resolver(target);
       if (resolved) {
         // Remove anchor from the previous element
         clearAnchor();

@@ -10,10 +10,13 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "types": ["vite/client"]
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@clens/react": ["../../packages/react/src"],
+      "@clens/lens": ["../../packages/lens/src"]
+    }
   },
   "include": ["src"]
 }

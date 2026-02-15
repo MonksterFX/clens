@@ -21,6 +21,7 @@ export function Tooltip({ info }: { info: ComponentInfo | null }) {
 
   /** Copies the component info to the clipboard. */
   function handleCopy() {
+    if (!info) return;
     navigator.clipboard.writeText(formatInfoForAI(info)).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
@@ -29,6 +30,7 @@ export function Tooltip({ info }: { info: ComponentInfo | null }) {
 
   /** Sends the task text to the MCP server and resets the input. */
   async function handleSendTask() {
+    if (!info) return;
     const text = taskText.trim();
     if (!text) return;
 
