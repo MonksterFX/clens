@@ -80,6 +80,7 @@ export function resolveComponentInfo(dom: HTMLElement): ComponentInfo | null {
       name: owner.type?.name ?? "Anonymous",
       file: source.fileName,
       line: source.lineNumber,
+      childPath: undefined,
     };
   }
 
@@ -90,5 +91,6 @@ export function resolveComponentInfo(dom: HTMLElement): ComponentInfo | null {
     name: owner.type?.name ?? "Anonymous",
     file: parsed?.fileName,
     line: parsed?.lineNumber,
+    childPath: undefined,
   };
 }

@@ -5,7 +5,11 @@ import { getConfig, getTaskEndpoint } from "../config/connection";
  * Formats component info into an AI-friendly string for clipboard.
  */
 export function formatInfoForAI(info: ComponentInfo): string {
-  return `Component: ${info.name}\nFile: ${info.file}\nLine: ${info.line}`;
+  let text = `Component: ${info.name}\nFile: ${info.file}\nLine: ${info.line}`;
+  if (info.childPath) {
+    text += `\nChild: ${info.childPath}`;
+  }
+  return text;
 }
 
 /**
@@ -15,7 +19,8 @@ export async function sendTask(
   text: string,
   info: ComponentInfo
 ): Promise<void> {
-  const contextLine = `[${info.name} – ${info.file}:${info.line}]`;
+  const childSuffix = info.childPath ? ` → ${info.childPath}` : "";
+  const contextLine = `[${info.name} – ${info.file}:${info.line}${childSuffix}]`;
   const body = JSON.stringify({ text: `${text}\n${contextLine}` });
 
   const config = getConfig();

@@ -5,6 +5,8 @@ export interface ComponentInfo {
   name: string;
   file: string | undefined;
   line: number | undefined;
+  /** Relative DOM path from the component root to a selected child element. */
+  childPath: string | undefined;
 }
 
 /**

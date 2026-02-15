@@ -34,5 +34,6 @@ export function resolveComponentInfo(
     name: className,
     file: filePath,
     line: lineNumber,
+    childPath: undefined,
   };
 }

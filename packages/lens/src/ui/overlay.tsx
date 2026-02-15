@@ -6,6 +6,7 @@ import { Toolbar } from "./toolbar";
 import { SettingsPanel } from "./settingsPanel";
 
 const OUTLINE_STYLE = "2px solid #3b82f6";
+const CHILDREN_OUTLINE_STYLE = "2px dashed #3b82f6";
 const ANCHOR_NAME = "--inspector-target";
 
 /**
@@ -21,11 +22,13 @@ export function InspectorOverlay() {
   const hoveredRef = useRef<HTMLElement | null>(null);
   const anchoredRef = useRef<HTMLElement | null>(null);
   const prevOutlineRef = useRef<string>("");
+  const outlinedChildrenRef = useRef<{ el: HTMLElement; prev: string }[]>([]);
 
   useEffect(() => {
     if (!enabled) {
       clearOutline();
       clearAnchor();
+      clearChildOutlines();
       setInfo(null);
       setAnchored(false);
       return;
@@ -48,7 +51,28 @@ export function InspectorOverlay() {
       }
     }
 
-    /** Applies a blue outline to the hovered element. */
+    /** Removes dashed outlines from previously outlined child elements. */
+    function clearChildOutlines() {
+      for (const { el, prev } of outlinedChildrenRef.current) {
+        el.style.outline = prev;
+      }
+      outlinedChildrenRef.current = [];
+    }
+
+    /** Applies a dashed outline to the direct children of the given element. */
+    function outlineChildren(parent: HTMLElement) {
+      clearChildOutlines();
+      const children = Array.from(parent.children) as HTMLElement[];
+      for (const child of children) {
+        outlinedChildrenRef.current.push({
+          el: child,
+          prev: child.style.outline,
+        });
+        child.style.outline = CHILDREN_OUTLINE_STYLE;
+      }
+    }
+
+    /** Applies a blue outline to the hovered element and dashed outlines to its children. */
     function onHover(e: MouseEvent) {
       const target = e.target as HTMLElement;
       if (!target || target === hoveredRef.current) return;
@@ -58,11 +82,14 @@ export function InspectorOverlay() {
       );
       if (overlayRoot?.contains(target)) return;
 
+      clearChildOutlines();
       clearOutline();
 
       prevOutlineRef.current = target.style.outline;
       target.style.outline = OUTLINE_STYLE;
       hoveredRef.current = target;
+
+      outlineChildren(target);
     }
 
     /** Sets anchor-name on the clicked element and resolves component info. */
@@ -81,12 +108,16 @@ export function InspectorOverlay() {
       const resolver = getComponentResolver();
       const resolved = resolver(target);
       if (resolved) {
-        // Remove anchor from the previous element
+        // Remove anchor and child outlines from the previous element
         clearAnchor();
+        clearChildOutlines();
 
         // Assign CSS anchor-name to the clicked element
         target.style.setProperty("anchor-name", ANCHOR_NAME);
         anchoredRef.current = target;
+
+        // Outline direct children with a dashed border
+        outlineChildren(target);
 
         setInfo(resolved);
         setAnchored(true);
@@ -97,6 +128,7 @@ export function InspectorOverlay() {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         clearAnchor();
+        clearChildOutlines();
         setInfo(null);
         setAnchored(false);
       }
@@ -109,6 +141,7 @@ export function InspectorOverlay() {
     return () => {
       clearOutline();
       clearAnchor();
+      clearChildOutlines();
       window.removeEventListener("mouseover", onHover);
       window.removeEventListener("click", onClick, true);
       window.removeEventListener("keydown", onKeyDown);

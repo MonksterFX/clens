@@ -91,33 +91,6 @@ export function Tooltip({ info }: { info: ComponentInfo | null }) {
           gap: 6,
         }}
       >
-        {/* Component info row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600 }}>{info.name}</div>
-            <div style={{ opacity: 0.75 }}>
-              {info.file}:{info.line}
-            </div>
-          </div>
-          <button
-            onClick={handleCopy}
-            style={{
-              background: copied ? "#22c55e" : "rgba(255,255,255,0.15)",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              padding: "4px 8px",
-              fontSize: 11,
-              cursor: "pointer",
-              flexShrink: 0,
-              transition: "background 0.2s",
-            }}
-            title="Copy component info for AI"
-          >
-            {copied ? "Copied!" : "Copy"}
-          </button>
-        </div>
-
         {/* Task input row */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <input
@@ -162,6 +135,44 @@ export function Tooltip({ info }: { info: ComponentInfo | null }) {
             title="Send task to AI agent"
           >
             {sendLabel}
+          </button>
+        </div>
+        {/* Component info row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 600 }}>{info.name}</div>
+            <div style={{ opacity: 0.75 }}>
+              {info.file}:{info.line}
+            </div>
+            {info.childPath && (
+              <div
+                style={{
+                  opacity: 0.6,
+                  fontSize: 11,
+                  fontFamily: "monospace",
+                  marginTop: 2,
+                }}
+              >
+                ▸ {info.childPath}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleCopy}
+            style={{
+              background: copied ? "#22c55e" : "rgba(255,255,255,0.15)",
+              color: "white",
+              border: "none",
+              borderRadius: 6,
+              padding: "4px 8px",
+              fontSize: 11,
+              cursor: "pointer",
+              flexShrink: 0,
+              transition: "background 0.2s",
+            }}
+            title="Copy component info for AI"
+          >
+            {copied ? "Copied!" : "Copy"}
           </button>
         </div>
       </div>
