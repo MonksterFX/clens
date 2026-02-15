@@ -24,6 +24,17 @@ async function fetchApi(
   });
 }
 
+/** Task status representing its lifecycle state. */
+export type TaskStatus = "pending" | "ongoing" | "completed" | "failed";
+
+/** Component information extracted from the browser overlay. */
+export interface ComponentInfo {
+  name: string;
+  file: string | undefined;
+  line: number | undefined;
+  element?: string; // optional: specific element within the component
+}
+
 /** Server status response type. */
 export interface ServerStatus {
   uptime: number;
@@ -37,19 +48,21 @@ export interface ServerStatus {
 export interface Task {
   id: string;
   text: string;
+  status: TaskStatus;
+  component?: ComponentInfo;
   timestamp: string;
-}
-
-/** Completed task type. */
-export interface CompletedTask extends Task {
-  completedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  result?: string;
 }
 
 /** Dashboard event types. */
 export type DashboardEvent =
   | { type: "connected" }
   | { type: "task_enqueued"; task: Task }
-  | { type: "task_dequeued"; task: Task }
+  | { type: "task_started"; task: Task }
+  | { type: "task_completed"; task: Task }
+  | { type: "task_failed"; task: Task }
   | { type: "task_deleted"; id: string }
   | { type: "queue_cleared" };
 
@@ -69,7 +82,7 @@ export async function getTasks(): Promise<Task[]> {
 }
 
 /** Fetches task history. */
-export async function getHistory(): Promise<CompletedTask[]> {
+export async function getHistory(): Promise<Task[]> {
   const res = await fetchApi("/api/tasks/history");
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();

@@ -10,6 +10,40 @@ const CHILDREN_OUTLINE_STYLE = "2px dashed #3b82f6";
 const ANCHOR_NAME = "--inspector-target";
 
 /**
+ * Derives a semantic element identifier from a DOM element.
+ * Returns tagName + #id or .className (e.g. "button.submit", "input#email").
+ * Returns undefined if the element has no meaningful identifier.
+ */
+function deriveElementIdentifier(element: HTMLElement): string | undefined {
+  const tag = element.tagName.toLowerCase();
+
+  // Use ID if present
+  if (element.id) {
+    return `${tag}#${element.id}`;
+  }
+
+  // Use first meaningful class (skip generic ones)
+  if (element.className && typeof element.className === "string") {
+    const classes = element.className.split(/\s+/).filter((c) => c.trim());
+    const meaningfulClass = classes.find(
+      (c) =>
+        !["active", "disabled", "selected", "hover"].includes(c.toLowerCase())
+    );
+    if (meaningfulClass) {
+      return `${tag}.${meaningfulClass}`;
+    }
+  }
+
+  // If no id or meaningful class, just return the tag name for common interactive elements
+  const interactiveTags = ["button", "input", "select", "textarea", "a", "img"];
+  if (interactiveTags.includes(tag)) {
+    return tag;
+  }
+
+  return undefined;
+}
+
+/**
  * Main inspector overlay that highlights hovered elements with a blue outline
  * and shows component info in a tooltip on click.
  * Uses the CSS Anchor Positioning API to anchor the tooltip to the clicked element.
@@ -124,9 +158,14 @@ export function InspectorOverlay() {
           outlineChildren(target);
         }
 
+        // Derive element identifier from the clicked target
+        const element = deriveElementIdentifier(target);
+
         // Strip childPath when child selection is disabled
         setInfo(
-          childSelection ? resolved : { ...resolved, childPath: undefined }
+          childSelection
+            ? { ...resolved, element }
+            : { ...resolved, childPath: undefined, element }
         );
         setAnchored(true);
       }

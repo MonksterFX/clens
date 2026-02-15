@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@clens/dashboard": "*",
+    "@clens/lens": "*",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "express": "^5.2.1"
   },
