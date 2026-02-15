@@ -1,247 +1,323 @@
-# clens-mcp
+# @clens/mcp-server
 
-MCP server for clens. Exposes a single tool, **TaskFromBrowser**, that lets an AI agent receive tasks submitted from the browser.
+> MCP server with HTTP API, task queue, and dashboard
 
-## How it works
+This package provides the Node.js server that receives tasks from the browser overlay and exposes them to AI agents via the Model Context Protocol. It also serves the dashboard UI and provides an HTTP API for task management.
 
-The server runs three things simultaneously:
+**User-facing documentation:** See [docs/quickstart.md](../../docs/quickstart.md), [docs/configuration.md](../../docs/configuration.md), and [docs/api-reference.md](../../docs/api-reference.md)
 
-1. **MCP transport** — communicates with Cursor (or any MCP client) over stdio or SSE.
-2. **HTTP receiver** (default port `3100`) — accepts task submissions from the browser overlay via `POST /task`.
-3. **Dashboard UI** — web interface for monitoring and managing the task queue at `http://localhost:3100/dashboard`.
-
-When the clens overlay submits a task, it is queued in memory. An AI agent can then call `TaskFromBrowser` to dequeue and act on it. The dashboard provides real-time monitoring via Server-Sent Events (SSE).
-
-```
-Browser overlay ──POST /task──▶ HTTP server ──queue──▶ TaskFromBrowser tool ──▶ AI agent
-                                      │
-                                      └──▶ Dashboard (real-time monitoring)
-```
-
-## Setup
-
-```bash
-npm install
-npm run build
-```
-
-The build process will compile both the MCP server and the dashboard UI. The dashboard will be available at `http://localhost:3100/dashboard` when the server is running.
+---
 
 ## Development
 
+### Build
+
 ```bash
+# Build once
+npm run build
+
+# Watch mode (restarts on changes via tsx)
 npm run dev
 ```
 
-For dashboard development, you can run the Vite dev server separately:
+Output: `dist/` (CommonJS via tsdown)
+
+The build process also compiles the dashboard UI (from `@clens/dashboard`) and bundles it for serving at `/dashboard`.
+
+### Type-check
 
 ```bash
-cd packages/dashboard
-npm run dev
+npm run typecheck
 ```
 
-This will start the dashboard at `http://localhost:5173` with hot module replacement. Configure the API base URL in development mode to point to `http://localhost:3100`.
-
-## MCP tool
-
-### WaitTaskFromBrowser
-
-Returns the next pending task submitted from the browser.
-
-| Parameter | Type    | Required | Description                                                                 |
-| --------- | ------- | -------- | --------------------------------------------------------------------------- |
-| `peek`    | boolean | No       | If true, returns the next task without removing it from the queue.          |
-| `wait`    | boolean | No       | If true, blocks until a task is available instead of returning immediately. |
-| `timeout` | number  | No       | Maximum seconds to wait when `wait` is true. Defaults to 30.                |
-
-**Response** — a text content block with the task description, submission timestamp, and remaining queue depth. Returns `"No pending tasks from the browser."` when the queue is empty (without wait), or `"No task arrived within {timeout}s timeout."` when wait timeout expires.
-
-## HTTP endpoints
-
-### Task submission
-
-#### `POST /task`
-
-Submit a task from the browser.
-
-**Request:**
-
-```json
-{ "text": "Fix the button styling in TodoItem component" }
-```
-
-**Response (200 OK):**
-
-```json
-{ "ok": true, "queued": 1, "id": "a1b2c3d4-..." }
-```
-
-### Health & Status
-
-#### `GET /health`
-
-Health check.
-
-**Response:**
-
-```json
-{ "status": "ok", "pending": 0, "authenticated": false }
-```
-
-#### `GET /api/status`
-
-Server status for dashboard.
-
-**Response:**
-
-```json
-{
-  "uptime": 123456,
-  "transport": "stdio",
-  "port": 3100,
-  "queueSize": 2,
-  "activeSseSessions": 1
-}
-```
-
-### Task management
-
-#### `GET /api/tasks`
-
-List all pending tasks in the queue.
-
-**Response:**
-
-```json
-{
-  "tasks": [
-    {
-      "id": "a1b2c3d4-...",
-      "text": "Fix the button styling",
-      "timestamp": "2026-02-14T10:30:00.000Z"
-    }
-  ]
-}
-```
-
-#### `GET /api/tasks/history`
-
-List recently completed tasks (last 50).
-
-**Response:**
-
-```json
-{
-  "history": [
-    {
-      "id": "a1b2c3d4-...",
-      "text": "Fix the button styling",
-      "timestamp": "2026-02-14T10:30:00.000Z",
-      "completedAt": "2026-02-14T10:31:00.000Z"
-    }
-  ]
-}
-```
-
-#### `DELETE /api/tasks`
-
-Clear all pending tasks from the queue.
-
-**Response:**
-
-```json
-{ "ok": true }
-```
-
-#### `DELETE /api/tasks/:id`
-
-Remove a specific task by its ID.
-
-**Response (200 OK):**
-
-```json
-{ "ok": true }
-```
-
-**Response (404 Not Found):**
-
-```json
-{ "error": "Task not found" }
-```
-
-### Real-time updates
-
-#### `GET /api/events`
-
-Server-Sent Events (SSE) stream for real-time dashboard updates.
-
-**Event types:**
-
-- `connected` — Initial connection established
-- `task_enqueued` — New task added to queue
-- `task_dequeued` — Task removed and completed
-- `task_deleted` — Task manually deleted
-- `queue_cleared` — All tasks cleared
-
-**Example event:**
-
-```
-data: {"type":"task_enqueued","task":{"id":"...","text":"...","timestamp":"..."}}
-```
-
-### Dashboard UI
-
-#### `GET /dashboard`
-
-Web interface for monitoring and managing tasks. Access at `http://localhost:3100/dashboard`.
-
-**Features:**
-
-- Real-time server status (uptime, queue size, SSE sessions)
-- Live task queue with individual delete buttons
-- Task history (last 50 completed tasks)
-- Clear all tasks button
-- Automatic updates via SSE
-
-## Cursor configuration
-
-### stdio mode (default)
-
-Cursor spawns the server process and communicates over stdin/stdout:
-
-```json
-{
-  "mcpServers": {
-    "clens": {
-      "command": "node",
-      "args": ["./mcp/dist/index.js"]
-    }
-  }
-}
-```
-
-### SSE mode
-
-Start the server independently with `MCP_TRANSPORT=sse`, then point Cursor at the SSE endpoint:
+### Testing
 
 ```bash
-MCP_TRANSPORT=sse npm run dev
+# Run tests
+npm test
+
+# Watch mode
+npm test -- --watch
 ```
 
-```json
-{
-  "mcpServers": {
-    "clens": {
-      "url": "http://localhost:3100/sse"
-    }
-  }
+---
+
+## Package Structure
+
+```
+packages/mcp-server/
+├── src/
+│   ├── endpoints/               # HTTP route handlers
+│   │   ├── api/                 # REST API endpoints
+│   │   │   ├── events.ts        # GET /api/events (SSE)
+│   │   │   ├── status.ts        # GET /api/status
+│   │   │   └── tasks.ts         # GET/DELETE /api/tasks
+│   │   ├── dashboard/           # Dashboard UI serving
+│   │   │   └── serve.ts         # GET /dashboard
+│   │   ├── health.ts            # GET /health
+│   │   ├── sse.ts               # GET /sse (MCP over SSE)
+│   │   └── task.ts              # POST /task
+│   ├── lib/                     # Shared utilities
+│   │   ├── config.ts            # Environment variables
+│   │   ├── http.ts              # HTTP server factory
+│   │   └── listen.ts            # MCP transport setup
+│   ├── mcp/                     # MCP server
+│   │   └── server.ts            # Tool registration
+│   ├── middleware/              # HTTP middleware
+│   │   ├── auth.ts              # Bearer token auth
+│   │   ├── cors.ts              # CORS headers
+│   │   └── logger.ts            # Request logging
+│   ├── state/                   # In-memory state
+│   │   ├── task-store.ts        # Task queue
+│   │   └── sse-connections.ts   # SSE connection manager
+│   ├── index.ts                 # Entry point
+│   └── types.ts                 # TypeScript types
+├── package.json
+├── tsconfig.json
+└── tsdown.config.ts
+```
+
+---
+
+## Key Concepts
+
+### Task Queue
+
+Tasks are stored in memory with four states:
+
+- **pending** — Submitted, not yet picked up by agent
+- **ongoing** — Agent started working on the task
+- **completed** — Agent finished successfully
+- **failed** — Agent encountered an error
+
+**State transitions:**
+
+```
+pending → ongoing → completed
+                 ↘ failed
+```
+
+**Implementation:** `src/state/task-store.ts`
+
+Functions:
+
+- `enqueue(task)` — Add a pending task
+- `peek()` — View next pending task without removing
+- `dequeue()` — Remove and return next pending task
+- `findById(id)` — Get task by ID
+- `listAll()` — Get all tasks
+- `listByStatus(status)` — Filter by status
+- `startTask(id)` — Mark as ongoing
+- `completeTask(id, result?)` — Mark as completed
+- `failTask(id, reason?)` — Mark as failed
+- `deleteTask(id)` — Remove a task
+- `clearPending()` — Remove all pending tasks
+- `waitForTask(timeoutMs)` — Block until a task is available
+
+### MCP Tools
+
+Six tools are exposed to AI agents:
+
+1. **WaitForTask** — Blocks until a pending task is available
+2. **ListTasks** — Lists all tasks (optionally filtered by status)
+3. **GetTask** — Retrieves a specific task by ID
+4. **StartTask** — Marks a pending task as ongoing
+5. **CompleteTask** — Marks an ongoing task as completed
+6. **FailTask** — Marks an ongoing task as failed
+
+**Implementation:** `src/mcp/server.ts`
+
+Each tool validates input, checks task state, and returns formatted responses.
+
+### HTTP Server
+
+Built with Node.js `http` module. Middleware stack:
+
+1. **CORS** — Allow cross-origin requests
+2. **Logger** — Log incoming requests
+3. **Auth** — Verify Bearer token (if `MCP_AUTH_TOKEN` is set)
+4. **Routes** — Dispatch to endpoint handlers
+
+**Implementation:** `src/lib/http.ts`
+
+### SSE Connections
+
+Server-Sent Events (SSE) are used for:
+
+- Dashboard real-time updates (`GET /api/events`)
+- MCP transport over HTTP (`GET /sse`)
+
+**Implementation:** `src/state/sse-connections.ts`
+
+Functions:
+
+- `add(response)` — Register a new SSE connection
+- `remove(response)` — Cleanup on disconnect
+- `broadcast(event)` — Send event to all connected clients
+- `count()` — Get number of active connections
+
+### Environment Variables
+
+Configured via `.env` or shell environment:
+
+| Variable         | Default | Description                           |
+| ---------------- | ------- | ------------------------------------- |
+| `MCP_HTTP_PORT`  | `3100`  | HTTP server port                      |
+| `MCP_TRANSPORT`  | `stdio` | MCP transport mode (`stdio` or `sse`) |
+| `MCP_AUTH_TOKEN` | —       | Optional Bearer token for auth        |
+
+**Implementation:** `src/lib/config.ts`
+
+---
+
+## MCP Transport Modes
+
+### stdio (Default)
+
+- Cursor spawns the server as a child process
+- Communication over stdin/stdout using JSON-RPC
+- Server lifecycle managed by Cursor
+
+**Usage:**
+
+```bash
+npx clens-mcp
+# or
+MCP_TRANSPORT=stdio npx clens-mcp
+```
+
+### SSE (Server-Sent Events)
+
+- Server runs independently
+- Cursor connects via HTTP to `/sse` endpoint
+- Uses SSE for server-to-client messages, POST for client-to-server
+
+**Usage:**
+
+```bash
+MCP_TRANSPORT=sse npx clens-mcp
+```
+
+**Implementation:** `src/lib/listen.ts`
+
+---
+
+## Endpoint Handlers
+
+### Task Submission
+
+**POST /task** — Submit a task from the browser overlay
+
+```typescript
+// src/endpoints/task.ts
+export async function handleTaskSubmission(req, res) {
+  const body = await parseJsonBody(req);
+  const task = {
+    id: crypto.randomUUID(),
+    text: body.text,
+    component: body.component,
+    timestamp: new Date().toISOString(),
+    status: "pending",
+  };
+  taskStore.enqueue(task);
+  sseConnections.broadcast({ type: "task_enqueued", task });
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ ok: true, queued: 1, id: task.id }));
 }
 ```
 
-## Environment variables
+### Health Check
 
-| Variable         | Default | Description                                   |
-| ---------------- | ------- | --------------------------------------------- |
-| `MCP_HTTP_PORT`  | `3100`  | Port for the HTTP server (tasks + SSE).       |
-| `MCP_TRANSPORT`  | `stdio` | MCP transport mode: `stdio` or `sse`.         |
-| `MCP_AUTH_TOKEN` | —       | Optional Bearer token for HTTP endpoint auth. |
+**GET /health** — Health check for overlay connection indicator
+
+```typescript
+// src/endpoints/health.ts
+export function handleHealthCheck(req, res) {
+  const pending = taskStore.listByStatus("pending").length;
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(
+    JSON.stringify({
+      status: "ok",
+      pending,
+      authenticated: !!process.env.MCP_AUTH_TOKEN,
+    })
+  );
+}
+```
+
+### Dashboard Serving
+
+**GET /dashboard** — Serve dashboard UI (static files)
+
+```typescript
+// src/endpoints/dashboard/serve.ts
+export function handleDashboardRequest(req, res) {
+  const filePath = getFilePath(req.url);
+  const stream = fs.createReadStream(filePath);
+  res.writeHead(200, { "Content-Type": getMimeType(filePath) });
+  stream.pipe(res);
+}
+```
+
+---
+
+## Testing with Example Apps
+
+```bash
+# Terminal 1: Start MCP server in watch mode
+npm run dev -w @clens/mcp-server
+
+# Terminal 2: Start React example
+npm run dev -w example-react
+
+# Terminal 3: Start dashboard dev server (optional)
+npm run dev -w @clens/dashboard
+```
+
+Submit tasks from the example app and verify they appear in the dashboard and are accessible via MCP tools.
+
+---
+
+## Debugging
+
+Enable verbose logging:
+
+```bash
+DEBUG=* npm run dev -w @clens/mcp-server
+```
+
+Check MCP logs in Cursor:
+
+- **Settings** → **MCP** → **View Logs**
+
+Test HTTP endpoints with curl:
+
+```bash
+# Health check
+curl http://localhost:3100/health
+
+# Submit task
+curl -X POST http://localhost:3100/task \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Test task"}'
+
+# List tasks
+curl http://localhost:3100/api/tasks
+```
+
+---
+
+## Dependencies
+
+- **@modelcontextprotocol/sdk** — MCP server implementation
+- **zod** — Schema validation for tool inputs
+- **@clens/dashboard** — Dashboard UI (bundled and served)
+- **tsdown** — Bundler for CommonJS output
+
+---
+
+## Next Steps
+
+- [**API Reference**](../../docs/api-reference.md) — HTTP endpoints and MCP tools
+- [**Configuration**](../../docs/configuration.md) — Environment variables and Cursor setup
+- [**Development Guide**](../../docs/development.md) — Monorepo development workflow
