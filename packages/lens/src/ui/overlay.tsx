@@ -19,6 +19,7 @@ export function InspectorOverlay() {
   const [info, setInfo] = useState<ComponentInfo | null>(null);
   const [anchored, setAnchored] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [childSelection, setChildSelection] = useState(true);
   const hoveredRef = useRef<HTMLElement | null>(null);
   const anchoredRef = useRef<HTMLElement | null>(null);
   const prevOutlineRef = useRef<string>("");
@@ -89,7 +90,9 @@ export function InspectorOverlay() {
       target.style.outline = OUTLINE_STYLE;
       hoveredRef.current = target;
 
-      outlineChildren(target);
+      if (childSelection) {
+        outlineChildren(target);
+      }
     }
 
     /** Sets anchor-name on the clicked element and resolves component info. */
@@ -116,10 +119,15 @@ export function InspectorOverlay() {
         target.style.setProperty("anchor-name", ANCHOR_NAME);
         anchoredRef.current = target;
 
-        // Outline direct children with a dashed border
-        outlineChildren(target);
+        // Outline direct children with a dashed border (when child selection is on)
+        if (childSelection) {
+          outlineChildren(target);
+        }
 
-        setInfo(resolved);
+        // Strip childPath when child selection is disabled
+        setInfo(
+          childSelection ? resolved : { ...resolved, childPath: undefined }
+        );
         setAnchored(true);
       }
     }
@@ -146,7 +154,7 @@ export function InspectorOverlay() {
       window.removeEventListener("click", onClick, true);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [enabled]);
+  }, [enabled, childSelection]);
 
   return (
     <>
@@ -155,7 +163,13 @@ export function InspectorOverlay() {
         setEnabled={setEnabled}
         onSettingsOpen={() => setSettingsOpen(true)}
       />
-      {enabled && anchored && <Tooltip info={info} />}
+      {enabled && anchored && (
+        <Tooltip
+          info={info}
+          childSelection={childSelection}
+          setChildSelection={setChildSelection}
+        />
+      )}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </>
   );

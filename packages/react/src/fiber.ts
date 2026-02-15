@@ -1,3 +1,4 @@
+import { computeChildPath } from "@clens/lens";
 import type { ComponentInfo } from "@clens/lens";
 
 /**
@@ -56,10 +57,31 @@ function parseDebugStack(
 }
 
 /**
+ * Traverses down from a component fiber to find the first host (DOM) element
+ * it renders. This is the component's "root" DOM node used as the starting
+ * point for child-path computation.
+ */
+function findComponentRootDom(componentFiber: any): HTMLElement | null {
+  let fiber = componentFiber.child;
+
+  while (fiber) {
+    if (fiber.stateNode instanceof HTMLElement) {
+      return fiber.stateNode;
+    }
+    // Dive deeper through non-host fibers (fragments, other components)
+    fiber = fiber.child;
+  }
+
+  return null;
+}
+
+/**
  * Resolves the component name, source file, and line number for a given DOM element
  * by inspecting its React fiber. Uses the element fiber's own debug info to point
  * to where the element is defined (inside the component), while using the nearest
  * owner component fiber for the component name.
+ * Also computes a relative childPath from the component's root DOM element
+ * to the clicked element.
  * Supports both React <19 (_debugSource) and React 19+ (_debugStack).
  */
 export function resolveComponentInfo(dom: HTMLElement): ComponentInfo | null {
@@ -68,6 +90,10 @@ export function resolveComponentInfo(dom: HTMLElement): ComponentInfo | null {
 
   const owner = findOwnerComponentFiber(fiber);
   if (!owner) return null;
+
+  // Compute relative DOM path from component root to clicked element
+  const rootDom = findComponentRootDom(owner);
+  const childPath = rootDom ? computeChildPath(rootDom, dom) : undefined;
 
   // Read source from the element fiber itself so the location points to
   // where the element is defined inside the component, not where the
@@ -80,7 +106,7 @@ export function resolveComponentInfo(dom: HTMLElement): ComponentInfo | null {
       name: owner.type?.name ?? "Anonymous",
       file: source.fileName,
       line: source.lineNumber,
-      childPath: undefined,
+      childPath,
     };
   }
 
@@ -91,6 +117,6 @@ export function resolveComponentInfo(dom: HTMLElement): ComponentInfo | null {
     name: owner.type?.name ?? "Anonymous",
     file: parsed?.fileName,
     line: parsed?.lineNumber,
-    childPath: undefined,
+    childPath,
   };
 }

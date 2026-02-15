@@ -3,13 +3,25 @@ import type { ComponentInfo } from "../../types";
 import { formatInfoForAI, sendTask } from "../../lib/services/task";
 import { TOOLTIP_STYLES } from "./tooltipStyles";
 
+interface TooltipProps {
+  info: ComponentInfo | null;
+  /** Whether child element selection / path tracking is enabled. */
+  childSelection: boolean;
+  /** Callback to toggle child selection on or off. */
+  setChildSelection: (value: boolean) => void;
+}
+
 /**
  * Displays component name and source location in a tooltip anchored to the
  * bottom-right of the inspected element using the CSS Anchor Positioning API.
  * Falls back to bottom-left, top-right, or top-left when overflowing the viewport.
- * Includes a copy button for pasting info into AI tools.
+ * Includes a copy button for pasting info into AI tools and a toggle for child selection.
  */
-export function Tooltip({ info }: { info: ComponentInfo | null }) {
+export function Tooltip({
+  info,
+  childSelection,
+  setChildSelection,
+}: TooltipProps) {
   const [copied, setCopied] = useState(false);
   const [taskText, setTaskText] = useState("");
   const [taskStatus, setTaskStatus] = useState<
@@ -135,6 +147,32 @@ export function Tooltip({ info }: { info: ComponentInfo | null }) {
             title="Send task to AI agent"
           >
             {sendLabel}
+          </button>
+          <button
+            onClick={() => setChildSelection(!childSelection)}
+            style={{
+              background: childSelection
+                ? "rgba(59,130,246,0.5)"
+                : "rgba(255,255,255,0.1)",
+              color: "white",
+              border: childSelection
+                ? "1px solid #3b82f6"
+                : "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 6,
+              padding: "4px 6px",
+              fontSize: 11,
+              cursor: "pointer",
+              flexShrink: 0,
+              transition: "background 0.2s, border-color 0.2s",
+              lineHeight: 1,
+            }}
+            title={
+              childSelection
+                ? "Child selection ON – click to disable"
+                : "Child selection OFF – click to enable"
+            }
+          >
+            {childSelection ? "⊞" : "⊟"}
           </button>
         </div>
         {/* Component info row */}
